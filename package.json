@@ -1,5 +1,5 @@
 {
-  "name": "@bitclaw/frameworks",
+  "name": "@runmist/frameworks",
   "version": "1.1.0",
   "description": "Framework, ORM, runtime, and monorepo detection for deployment pipelines",
   "files": [
