@@ -1,0 +1,48 @@
+{
+  "name": "@bitclaw/frameworks",
+  "version": "1.1.0",
+  "description": "Framework, ORM, runtime, and monorepo detection for deployment pipelines",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "format": "biome format --write",
+    "prepublishOnly": "npm run build && npm test",
+    "publish:dev": "npm run build && npm publish --tag dev --access public",
+    "publish:patch": "npm whoami && npm version patch && git push --follow-tags && npm publish --access public",
+    "publish:minor": "npm whoami && npm version minor && git push --follow-tags && npm publish --access public",
+    "publish:major": "npm whoami && npm version major && git push --follow-tags && npm publish --access public"
+  },
+  "keywords": [
+    "framework-detection",
+    "orm",
+    "monorepo",
+    "runtime",
+    "deploy",
+    "analysis"
+  ],
+  "author": "bitclaw",
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
+    "@types/bun": "^1.3.9",
+    "typescript": "^5.8.3"
+  }
+}
