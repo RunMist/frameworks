@@ -57,6 +57,25 @@ describe('ORM presets', () => {
     }
   });
 
+  test('given prisma + bun runtime, when getting preset, then commands use bunx', () => {
+    const preset = getOrmPreset('prisma', 'bun');
+    const cmds = preset!.hooks!['after-install']!;
+    for (const cmd of cmds) expect(cmd).toContain('bunx');
+    for (const cmd of cmds) expect(cmd).not.toContain('npm exec');
+  });
+
+  test('given prisma + node runtime, when getting preset, then commands use npm exec', () => {
+    const preset = getOrmPreset('prisma', 'node');
+    const cmds = preset!.hooks!['after-install']!;
+    for (const cmd of cmds) expect(cmd).toContain('npm exec');
+    for (const cmd of cmds) expect(cmd).not.toContain('bunx');
+  });
+
+  test('given drizzle + node runtime, when getting preset, then command uses npm exec', () => {
+    const preset = getOrmPreset('drizzle', 'node');
+    expect(preset!.hooks!['after-install']![0]).toContain('npm exec');
+  });
+
   test('given unknown ORM id, when calling getOrmPreset, then returns undefined', () => {
     expect(getOrmPreset('unknown-orm')).toBeUndefined();
   });
