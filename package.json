@@ -1,6 +1,10 @@
 {
   "name": "@runmist/frameworks",
   "version": "1.1.0",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
   "description": "Framework, ORM, runtime, and monorepo detection for deployment pipelines",
   "files": [
     "dist",
