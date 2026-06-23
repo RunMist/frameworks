@@ -12,8 +12,8 @@ export const ORM_PRESETS: OrmPreset[] = [
     description: 'Type-safe ORM with auto-generated client',
     hooks: {
       'after-install': [
-        'PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 npx prisma generate',
-        'PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 npx prisma migrate deploy'
+        'PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 bunx prisma generate',
+        'PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 bunx prisma migrate deploy'
       ]
     }
   },
@@ -22,7 +22,7 @@ export const ORM_PRESETS: OrmPreset[] = [
     name: 'Drizzle',
     description: 'Lightweight TypeScript ORM',
     hooks: {
-      'after-install': ['npx drizzle-kit migrate']
+      'after-install': ['bunx drizzle-kit migrate']
     }
   },
   {
@@ -30,7 +30,7 @@ export const ORM_PRESETS: OrmPreset[] = [
     name: 'Knex.js',
     description: 'SQL query builder with migrations',
     hooks: {
-      'after-install': ['npx knex migrate:latest']
+      'after-install': ['bunx knex migrate:latest']
     }
   },
   {
@@ -38,7 +38,7 @@ export const ORM_PRESETS: OrmPreset[] = [
     name: 'TypeORM',
     description: 'ORM for TypeScript and JavaScript',
     hooks: {
-      'after-install': ['npx typeorm migration:run -d ./data-source.ts']
+      'after-install': ['bunx typeorm migration:run -d ./data-source.ts']
     }
   },
   {
@@ -46,7 +46,7 @@ export const ORM_PRESETS: OrmPreset[] = [
     name: 'MikroORM',
     description: 'TypeScript ORM with unit of work',
     hooks: {
-      'after-install': ['npx mikro-orm migration:up']
+      'after-install': ['bunx mikro-orm migration:up']
     }
   },
   {
@@ -54,7 +54,7 @@ export const ORM_PRESETS: OrmPreset[] = [
     name: 'Sequelize',
     description: 'Promise-based Node.js ORM',
     hooks: {
-      'after-install': ['npx sequelize-cli db:migrate']
+      'after-install': ['bunx sequelize-cli db:migrate']
     }
   }
 ];
