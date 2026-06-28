@@ -14,7 +14,7 @@ const makePresets = (runner: string): OrmPreset[] => [
   {
     id: 'none',
     name: 'None',
-    description: 'No ORM — manage migrations manually'
+    description: 'No ORM , manage migrations manually'
   },
   {
     id: 'prisma',
