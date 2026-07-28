@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { getOrmPreset, ORM_PRESETS } from './orm-presets';
+import {
+  getOrmPreset,
+  ORM_PRESETS,
+  ormHooksToRecord,
+  regenerateOrmHooksForRuntime
+} from './orm-presets';
 import type { DeployHookId, OrmPresetId } from './types';
 
 const VALID_HOOK_IDS: DeployHookId[] = [
@@ -95,5 +100,52 @@ describe('ORM presets', () => {
       expect(preset).toBeDefined();
       expect(preset!.id).toBe(id);
     }
+  });
+});
+
+describe('ormHooksToRecord', () => {
+  test('given a preset with hooks, when converting, then joins commands with newlines', () => {
+    const preset = getOrmPreset('prisma', 'bun');
+    const record = ormHooksToRecord(preset);
+    expect(record['after-install']).toContain('\n');
+  });
+
+  test('given a preset with no hooks, when converting, then returns empty record', () => {
+    const preset = getOrmPreset('none');
+    expect(ormHooksToRecord(preset)).toEqual({});
+  });
+
+  test('given undefined preset, when converting, then returns empty record', () => {
+    expect(ormHooksToRecord(undefined)).toEqual({});
+  });
+});
+
+describe('regenerateOrmHooksForRuntime', () => {
+  test('given hooks that still match the old runtime preset, when runtime changes, then regenerates for the new runtime', () => {
+    const oldHooks = ormHooksToRecord(getOrmPreset('drizzle', 'node'));
+    const result = regenerateOrmHooksForRuntime(
+      'drizzle',
+      'node',
+      'bun',
+      oldHooks
+    );
+    expect(result).toEqual(ormHooksToRecord(getOrmPreset('drizzle', 'bun')));
+    expect(result!['after-install']).toContain('bunx');
+  });
+
+  test('given hooks that were hand-edited (no longer match the old preset), when runtime changes, then does not overwrite them', () => {
+    const handEdited = { 'after-install': 'echo custom migration step' };
+    const result = regenerateOrmHooksForRuntime(
+      'drizzle',
+      'node',
+      'bun',
+      handEdited
+    );
+    expect(result).toBeNull();
+  });
+
+  test('given orm is "none", when runtime changes, then returns null', () => {
+    const result = regenerateOrmHooksForRuntime('none', 'node', 'bun', {});
+    expect(result).toBeNull();
   });
 });

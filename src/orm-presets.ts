@@ -71,3 +71,42 @@ export const ORM_PRESET_OPTIONS = ORM_PRESETS.map(p => ({
   label: p.name,
   description: p.description
 }));
+
+// Flattens a preset's hooks (arrays of commands) into the newline-joined
+// strings the deploy-hooks textarea fields store, e.g. for a
+// `{ 'after-install': string[] }` preset shape.
+export function ormHooksToRecord(
+  preset: OrmPreset | undefined
+): Record<string, string> {
+  const record: Record<string, string> = {};
+  if (preset?.hooks) {
+    for (const [id, commands] of Object.entries(preset.hooks)) {
+      if (commands?.length) record[id] = commands.join('\n');
+    }
+  }
+  return record;
+}
+
+/**
+ * Recomputes ORM-generated deploy hooks after a runtime change (e.g.
+ * Drizzle's "npm exec -- drizzle-kit migrate" vs "bunx drizzle-kit
+ * migrate"), but only if the current hooks still exactly match what the
+ * old runtime's preset produced - preserves a hand-edited hook instead of
+ * silently overwriting it. Returns null when nothing should change.
+ */
+export function regenerateOrmHooksForRuntime(
+  orm: string,
+  oldRuntime: Runtime,
+  newRuntime: Runtime,
+  currentHooks: Record<string, string>
+): Record<string, string> | null {
+  if (orm === 'none') return null;
+
+  const oldHooks = ormHooksToRecord(getOrmPreset(orm, oldRuntime));
+  const hooksMatchOldPreset =
+    JSON.stringify(currentHooks) === JSON.stringify(oldHooks);
+
+  return hooksMatchOldPreset
+    ? ormHooksToRecord(getOrmPreset(orm, newRuntime))
+    : null;
+}

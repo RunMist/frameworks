@@ -6,7 +6,9 @@ export { detectPackageManager, detectRuntime } from './detect-runtime';
 export {
   getOrmPreset,
   ORM_PRESET_OPTIONS,
-  ORM_PRESETS
+  ORM_PRESETS,
+  ormHooksToRecord,
+  regenerateOrmHooksForRuntime
 } from './orm-presets';
 export {
   FRAMEWORK_PRESET_OPTIONS,
