@@ -110,3 +110,20 @@ export function regenerateOrmHooksForRuntime(
     ? ormHooksToRecord(getOrmPreset(orm, newRuntime))
     : null;
 }
+
+/**
+ * Recomputes ORM-generated deploy hooks after the ORM selector changes.
+ * Returns null when the ORM didn't actually change - Radix Select's
+ * onValueChange (and equivalent listbox primitives) fires even on a no-op
+ * reselect of the item that's already selected, and blindly regenerating
+ * hooks in that case would silently wipe a hand-edited hook back to the
+ * preset default.
+ */
+export function regenerateOrmHooksForOrmChange(
+  oldOrm: string,
+  newOrm: string,
+  runtime: Runtime
+): Record<string, string> | null {
+  if (newOrm === oldOrm) return null;
+  return ormHooksToRecord(getOrmPreset(newOrm, runtime));
+}

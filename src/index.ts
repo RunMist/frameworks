@@ -8,6 +8,7 @@ export {
   ORM_PRESET_OPTIONS,
   ORM_PRESETS,
   ormHooksToRecord,
+  regenerateOrmHooksForOrmChange,
   regenerateOrmHooksForRuntime
 } from './orm-presets';
 export {

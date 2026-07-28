@@ -3,6 +3,7 @@ import {
   getOrmPreset,
   ORM_PRESETS,
   ormHooksToRecord,
+  regenerateOrmHooksForOrmChange,
   regenerateOrmHooksForRuntime
 } from './orm-presets';
 import type { DeployHookId, OrmPresetId } from './types';
@@ -146,6 +147,35 @@ describe('regenerateOrmHooksForRuntime', () => {
 
   test('given orm is "none", when runtime changes, then returns null', () => {
     const result = regenerateOrmHooksForRuntime('none', 'node', 'bun', {});
+    expect(result).toBeNull();
+  });
+});
+
+describe('regenerateOrmHooksForOrmChange', () => {
+  // Regression test for a real production bug: warpkit.dev's deploy kept
+  // running the stock `bunx drizzle-kit migrate` hook after the user hand-
+  // edited it to `bun scripts/migrate.ts` and saved. Root cause: Radix
+  // Select's onValueChange fires even on a no-op reselect of the item
+  // that's already selected, and the app's onOrmChange handler regenerated
+  // hooks unconditionally, silently reverting the hand edit back to the
+  // ORM preset default.
+  test('given the ORM selector reselects the same ORM, when nothing actually changed, then returns null and preserves hand-edited hooks', () => {
+    const result = regenerateOrmHooksForOrmChange('drizzle', 'drizzle', 'bun');
+    expect(result).toBeNull();
+  });
+
+  test('given the ORM actually changes, when regenerating, then returns the new ORM preset hooks', () => {
+    const result = regenerateOrmHooksForOrmChange('drizzle', 'prisma', 'bun');
+    expect(result).toEqual(ormHooksToRecord(getOrmPreset('prisma', 'bun')));
+  });
+
+  test('given the ORM changes to "none", when regenerating, then returns an empty record', () => {
+    const result = regenerateOrmHooksForOrmChange('drizzle', 'none', 'bun');
+    expect(result).toEqual({});
+  });
+
+  test('given "none" reselects "none" (no ORM ever chosen), when nothing changed, then returns null', () => {
+    const result = regenerateOrmHooksForOrmChange('none', 'none', 'bun');
     expect(result).toBeNull();
   });
 });
