@@ -4,12 +4,21 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
   {
     id: 'tanstack-start',
     name: 'TanStack Start',
-    description: 'TanStack Start with Nitro',
+    description: 'TanStack Start (Vite SSR, no Nitro)',
     runtime: 'bun',
     installCommand: 'bun install --frozen-lockfile',
     buildCommand: 'bun run build',
-    startCommand: 'bun .output/server/index.mjs',
-    outputDirectory: '.output/public',
+    // No universal default is possible here - see
+    // docs/runmist/tanstack-start-deploy-targets.md. Current (1.168.x+)
+    // TanStack Start dropped the Nitro requirement; there's no framework-
+    // shipped server binary anymore for self-hosted targets, so every
+    // project writes its own thin Fetch-API wrapper (this repo's own
+    // server/start.ts, tanstack.com's src/server.ts) and its command/path
+    // varies per project. This placeholder documents that expectation
+    // rather than guessing a value that will be wrong as often as right.
+    startCommand:
+      'bun server/start.ts # verify: use the actual server entry for this project',
+    outputDirectory: 'dist/client',
     staticUrlPath: '/assets/*'
   },
   {

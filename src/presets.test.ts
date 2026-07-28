@@ -50,4 +50,23 @@ describe('framework presets', () => {
     expect(tanstack).toBeDefined();
     expect(tanstack!.hooks).toBeUndefined();
   });
+
+  // Regression: current (1.168.x+) TanStack Start dropped the Nitro
+  // requirement, so it no longer builds to .output/* by default - it
+  // builds to dist/client via plain Vite SSR, same as this repo and the
+  // official tanstack.com site. See docs/runmist/tanstack-start-deploy-targets.md.
+  test('given tanstack-start preset, when checking output directory, then matches current (non-Nitro) Vite SSR build, not the old Nitro .output convention', () => {
+    const tanstack = getPreset('tanstack-start');
+    expect(tanstack!.outputDirectory).toBe('dist/client');
+    expect(tanstack!.outputDirectory).not.toContain('.output');
+  });
+
+  // No universal startCommand is possible for self-hosted targets on
+  // current TanStack Start - every project writes its own thin Fetch-API
+  // server wrapper. This asserts the preset documents that rather than
+  // silently defaulting to a value that's wrong as often as right.
+  test('given tanstack-start preset, when checking start command, then flags it as project-specific rather than asserting a runnable default', () => {
+    const tanstack = getPreset('tanstack-start');
+    expect(tanstack!.startCommand).toContain('verify');
+  });
 });
