@@ -52,7 +52,13 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     buildCommand: 'npm run build',
     startCommand: 'node server.js',
     outputDirectory: '.next',
-    staticUrlPath: '/_next/*'
+    // Scoped to "/_next/static/*", not the whole "/_next/*" namespace -
+    // "_next" also hosts dynamic endpoints (the image optimizer at
+    // "/_next/image", "/_next/data/*" on the older Pages Router). A
+    // reverse-proxy config that treats the whole prefix as static will
+    // 404 those instead of proxying them to the app - confirmed live
+    // against bitclaw.com (see @runmist/deploy's matching fix).
+    staticUrlPath: '/_next/static/*'
   },
   {
     id: 'nuxt',
