@@ -131,7 +131,10 @@ describe('regenerateOrmHooksForRuntime', () => {
       oldHooks
     );
     expect(result).toEqual(ormHooksToRecord(getOrmPreset('drizzle', 'bun')));
-    expect(result!['after-install']).toContain('bunx');
+    // bun runtime uses drizzle-orm/bun-sqlite's own migrator, not the
+    // drizzle-kit CLI (which needs a driver like better-sqlite3 that a
+    // bun:sqlite app doesn't have installed) - see makePresets's drizzle comment.
+    expect(result!['after-install']).toContain('bun scripts/migrate.ts');
   });
 
   test('given hooks that were hand-edited (no longer match the old preset), when runtime changes, then does not overwrite them', () => {

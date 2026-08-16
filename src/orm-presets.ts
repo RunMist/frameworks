@@ -10,7 +10,7 @@ const PRISMA_HOOKS = (runner: string): string[] => [
   `PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 ${runner} prisma migrate deploy`
 ];
 
-const makePresets = (runner: string): OrmPreset[] => [
+const makePresets = (runner: string, runtime: Runtime): OrmPreset[] => [
   {
     id: 'none',
     name: 'None',
@@ -26,7 +26,25 @@ const makePresets = (runner: string): OrmPreset[] => [
     id: 'drizzle',
     name: 'Drizzle',
     description: 'Lightweight TypeScript ORM',
-    hooks: { 'after-install': [`${runner} drizzle-kit migrate`] }
+    // `drizzle-kit migrate` needs its own SQL driver (better-sqlite3 or
+    // @libsql/client) to connect - a bun:sqlite-based Drizzle app (the
+    // convention this platform's own template uses) has neither installed,
+    // so the stock CLI command fails with "Please install either
+    // 'better-sqlite3' or '@libsql/client'" on every bun-runtime deploy.
+    // bun scripts/migrate.ts (drizzle-orm/bun-sqlite's own migrator, no
+    // extra driver needed) is the convention this repo and the warpkit
+    // template both already use - matches what a customer's bun+Drizzle
+    // project actually needs to run, not what drizzle-kit's CLI expects.
+    // Node runtime keeps the CLI command: a node-runtime Drizzle project
+    // is far more likely to have a real driver (better-sqlite3, postgres,
+    // mysql2) installed already, which is exactly what drizzle-kit's CLI
+    // requires to work.
+    hooks: {
+      'after-install':
+        runtime === 'bun'
+          ? ['bun scripts/migrate.ts']
+          : [`${runner} drizzle-kit migrate`]
+    }
   },
   {
     id: 'knex',
@@ -57,13 +75,13 @@ const makePresets = (runner: string): OrmPreset[] => [
 ];
 
 // Default presets use bunx (Bun is always installed on runmist servers)
-export const ORM_PRESETS: OrmPreset[] = makePresets('bunx');
+export const ORM_PRESETS: OrmPreset[] = makePresets('bunx', 'bun');
 
 export function getOrmPreset(
   id: string,
   runtime: Runtime = 'bun'
 ): OrmPreset | undefined {
-  return makePresets(pkgRunner(runtime)).find(p => p.id === id);
+  return makePresets(pkgRunner(runtime), runtime).find(p => p.id === id);
 }
 
 export const ORM_PRESET_OPTIONS = ORM_PRESETS.map(p => ({
