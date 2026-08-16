@@ -33,6 +33,14 @@ export type FrameworkPreset = {
   staticUrlPath: string | null;
   /** Deploy hook commands keyed by hook point in the pipeline */
   hooks?: Partial<Record<DeployHookId, string[]>>;
+  /**
+   * App-relative paths to real, verified incremental-build caches for this
+   * framework (e.g. Next.js's `.next/cache`). Preserved across deploys where
+   * the build pipeline supports it, instead of being wiped on every build.
+   * Only populate for caches that are actually real and verified - leave
+   * unset rather than guess.
+   */
+  cacheDirs?: string[];
 };
 
 export type DetectedApp = {

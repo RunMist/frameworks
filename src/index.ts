@@ -1,4 +1,5 @@
 export { analyzeRepo } from './analyze-repo';
+export { MONOREPO_CACHE_DIRS, resolveCacheDirs } from './cache-dirs';
 export { detectFramework } from './detect-framework';
 export { detectMonorepo } from './detect-monorepo';
 export { detectOrm } from './detect-orm';

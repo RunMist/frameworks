@@ -69,4 +69,33 @@ describe('framework presets', () => {
     const tanstack = getPreset('tanstack-start');
     expect(tanstack!.startCommand).toContain('verify');
   });
+
+  test('given nextjs preset, when checking cacheDirs, then includes its real incremental-build cache', () => {
+    const nextjs = getPreset('nextjs');
+    expect(nextjs!.cacheDirs).toEqual(['.next/cache']);
+  });
+
+  test('given vite preset, when checking cacheDirs, then includes its dep-prebundle cache', () => {
+    const vite = getPreset('vite');
+    expect(vite!.cacheDirs).toEqual(['node_modules/.vite']);
+  });
+
+  test('given presets with no verified incremental-build cache, when checking cacheDirs, then left unset rather than guessed', () => {
+    for (const id of [
+      'tanstack-start',
+      'nitro',
+      'react-router',
+      'nuxt',
+      'sveltekit',
+      'astro',
+      'hono',
+      'elysia',
+      'express',
+      'fastify',
+      'other'
+    ]) {
+      const preset = getPreset(id);
+      expect(preset!.cacheDirs).toBeUndefined();
+    }
+  });
 });

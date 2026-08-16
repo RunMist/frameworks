@@ -58,7 +58,8 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     // reverse-proxy config that treats the whole prefix as static will
     // 404 those instead of proxying them to the app - confirmed live
     // against bitclaw.com (see @runmist/deploy's matching fix).
-    staticUrlPath: '/_next/static/*'
+    staticUrlPath: '/_next/static/*',
+    cacheDirs: ['.next/cache']
   },
   {
     id: 'nuxt',
@@ -102,7 +103,8 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     buildCommand: 'bun run build',
     startCommand: 'bun run preview',
     outputDirectory: 'dist',
-    staticUrlPath: '/assets/*'
+    staticUrlPath: '/assets/*',
+    cacheDirs: ['node_modules/.vite']
   },
   {
     id: 'hono',
