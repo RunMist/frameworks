@@ -75,6 +75,19 @@ describe('framework presets', () => {
     expect(nextjs!.cacheDirs).toEqual(['.next/cache']);
   });
 
+  // Regression: confirmed live 2026-09-28 against bitclaw.com -
+  // 'node server.js' assumes next.config's `output: 'standalone'` (opt-in,
+  // a different, non-default build mode that emits
+  // .next/standalone/server.js). A plain `next build` - the common case,
+  // and the only one this preset can safely assume without knowing the
+  // project's actual config - never produces a server.js anywhere,
+  // producing MODULE_NOT_FOUND on every deploy. `next start` is Next.js's
+  // own documented production entry point and works for both modes.
+  test('given nextjs preset, when checking start command, then it is next start, not a standalone-only server.js', () => {
+    const nextjs = getPreset('nextjs');
+    expect(nextjs!.startCommand).toBe('next start');
+  });
+
   test('given vite preset, when checking cacheDirs, then includes its dep-prebundle cache', () => {
     const vite = getPreset('vite');
     expect(vite!.cacheDirs).toEqual(['node_modules/.vite']);

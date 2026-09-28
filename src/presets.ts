@@ -50,7 +50,20 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     runtime: 'node',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
-    startCommand: 'node server.js',
+    // NOT 'node server.js' - that file only exists when next.config sets
+    // `output: 'standalone'` (opt-in, produces .next/standalone/server.js,
+    // a different path). A plain `next build` - the common case, and what
+    // this preset must default to since it has no way to know which mode
+    // a given project uses - never produces a server.js anywhere, so that
+    // default 404'd on module load for every non-standalone project.
+    // Confirmed live against bitclaw.com 2026-09-28: MODULE_NOT_FOUND on
+    // '.../server.js', health check failure, deploy rolled back. `next
+    // start` is Next.js's own documented production entry point and works
+    // for both build modes. Multi-word, not bun/node/npm-prefixed -
+    // redeploy.sh's ExecStart mapping resolves this via
+    // node_modules/.bin/next, not through npm run/exec (see that script's
+    // own comment on exactly this shape).
+    startCommand: 'next start',
     outputDirectory: '.next',
     // Scoped to "/_next/static/*", not the whole "/_next/*" namespace -
     // "_next" also hosts dynamic endpoints (the image optimizer at
