@@ -1,8 +1,10 @@
 export { analyzeRepo } from './analyze-repo';
 export { MONOREPO_CACHE_DIRS, resolveCacheDirs } from './cache-dirs';
-export { detectFramework } from './detect-framework';
+export type { FrameworkDetectionRule } from './detect-framework';
+export { DETECTION_RULES, detectFramework } from './detect-framework';
 export { detectMonorepo } from './detect-monorepo';
-export { detectOrm } from './detect-orm';
+export type { OrmDetectionRule } from './detect-orm';
+export { detectOrm, ORM_DETECTION_RULES } from './detect-orm';
 export { detectPackageManager, detectRuntime } from './detect-runtime';
 export {
   getOrmPreset,
@@ -24,6 +26,7 @@ export {
   DEFAULT_NODE_VERSION,
   NODE_VERSIONS
 } from './runtime-versions';
+export { SECURITY_WATCH_PACKAGES } from './security-packages';
 export type {
   DeployHookId,
   DetectedApp,

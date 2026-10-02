@@ -5,18 +5,31 @@ type PackageJson = {
   devDependencies?: Record<string, string>;
 };
 
+export type OrmDetectionRule = {
+  id: Exclude<OrmPresetId, 'none'>;
+  /** Package names to match in dependencies or devDependencies */
+  matchPackages: string[];
+};
+
+/** Checked in order; the first match wins. */
+export const ORM_DETECTION_RULES: readonly OrmDetectionRule[] = [
+  { id: 'prisma', matchPackages: ['prisma', '@prisma/client'] },
+  { id: 'drizzle', matchPackages: ['drizzle-orm'] },
+  { id: 'typeorm', matchPackages: ['typeorm'] },
+  { id: 'knex', matchPackages: ['knex'] },
+  { id: 'mikro-orm', matchPackages: ['@mikro-orm/core', 'mikro-orm'] },
+  { id: 'sequelize', matchPackages: ['sequelize'] }
+];
+
 export function detectOrm(packageJson: PackageJson): OrmPresetId {
   const deps = {
     ...packageJson.dependencies,
     ...packageJson.devDependencies
   };
 
-  if (deps.prisma || deps['@prisma/client']) return 'prisma';
-  if (deps['drizzle-orm']) return 'drizzle';
-  if (deps.typeorm) return 'typeorm';
-  if (deps.knex) return 'knex';
-  if (deps['@mikro-orm/core'] || deps['mikro-orm']) return 'mikro-orm';
-  if (deps.sequelize) return 'sequelize';
+  for (const rule of ORM_DETECTION_RULES) {
+    if (rule.matchPackages.some(pkg => deps[pkg])) return rule.id;
+  }
 
   return 'none';
 }

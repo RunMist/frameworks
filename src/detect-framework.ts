@@ -3,7 +3,7 @@ type PackageJson = {
   devDependencies?: Record<string, string>;
 };
 
-type FrameworkDetectionRule = {
+export type FrameworkDetectionRule = {
   id: string;
   /** Package names to match in dependencies or devDependencies */
   matchPackages: string[];
@@ -15,7 +15,7 @@ type FrameworkDetectionRule = {
  * Ordered by specificity: meta-frameworks first, then base tools last.
  * Higher-specificity frameworks supersede lower ones (e.g. TanStack Start supersedes Nitro and Vite).
  */
-const DETECTION_RULES: FrameworkDetectionRule[] = [
+export const DETECTION_RULES: readonly FrameworkDetectionRule[] = [
   { id: 'tanstack-start', matchPackages: ['@tanstack/react-start'] },
   { id: 'nextjs', matchPackages: ['next'] },
   { id: 'nuxt', matchPackages: ['nuxt', 'nuxt3'] },
