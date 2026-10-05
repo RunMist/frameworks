@@ -48,7 +48,9 @@ export {
 export {
   FRAMEWORK_PRESET_OPTIONS,
   FRAMEWORK_PRESETS,
-  getPreset
+  getPreset,
+  PROJECT_KINDS,
+  suggestProjectKind
 } from './presets';
 export type { BunVersion } from './runtime-versions';
 export { BUN_VERSIONS, DEFAULT_BUN_VERSION } from './runtime-versions';
@@ -60,5 +62,6 @@ export type {
   MonorepoInfo,
   OrmPreset,
   OrmPresetId,
+  ProjectKind,
   RepoDetectionResult
 } from './types';

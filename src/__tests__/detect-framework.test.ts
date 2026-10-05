@@ -168,3 +168,14 @@ describe('detectFramework', () => {
     ).toBe('react-router');
   });
 });
+
+describe('gatsby', () => {
+  test('given gatsby in dependencies, when detecting, then gatsby (not vite/express)', () => {
+    expect(
+      detectFramework({
+        dependencies: { gatsby: '^2.5.5', express: '^4.0.0' },
+        devDependencies: { vite: '^5.0.0' }
+      })
+    ).toBe('gatsby');
+  });
+});

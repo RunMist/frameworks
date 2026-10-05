@@ -1,4 +1,4 @@
-import type { FrameworkPreset } from './types';
+import type { FrameworkPreset, ProjectKind } from './types';
 
 export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
   {
@@ -6,6 +6,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'TanStack Start',
     description: 'TanStack Start (Vite SSR, no Nitro)',
     runtime: 'bun',
+    kind: 'web_app',
     installCommand: 'bun install --frozen-lockfile',
     buildCommand: 'bun run build',
     // No universal default is possible here - see
@@ -26,6 +27,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'Nitro',
     description: 'UnJS Nitro server framework',
     runtime: 'bun',
+    kind: 'web_app',
     installCommand: 'bun install --frozen-lockfile',
     buildCommand: 'bun run build',
     startCommand: 'bun .output/server/index.mjs',
@@ -37,6 +39,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'React Router',
     description: 'React Router v7 / Remix',
     runtime: 'node',
+    kind: 'web_app',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
     startCommand: 'node index.js',
@@ -48,6 +51,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'Next.js',
     description: 'React framework by Vercel',
     runtime: 'node',
+    kind: 'web_app',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
     // NOT 'node server.js' - that file only exists when next.config sets
@@ -79,6 +83,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'Nuxt',
     description: 'Vue.js full-stack framework',
     runtime: 'node',
+    kind: 'web_app',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
     startCommand: 'node .output/server/index.mjs',
@@ -90,6 +95,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'SvelteKit',
     description: 'Svelte app framework',
     runtime: 'node',
+    kind: 'web_app',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
     startCommand: 'node build/index.js',
@@ -101,6 +107,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'Astro',
     description: 'Content-focused web framework',
     runtime: 'node',
+    kind: 'web_app',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
     startCommand: 'node ./dist/server/entry.mjs',
@@ -108,10 +115,27 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     staticUrlPath: '/_astro/*'
   },
   {
+    id: 'gatsby',
+    name: 'Gatsby',
+    description: 'React static site generator',
+    runtime: 'node',
+    kind: 'static',
+    spaFallback: false,
+    installCommand: 'npm ci',
+    buildCommand: 'npm run build',
+    // Static: nothing runs, Caddy serves the build output.
+    startCommand: '',
+    outputDirectory: 'public',
+    staticUrlPath: null,
+    cacheDirs: ['.cache']
+  },
+  {
     id: 'vite',
     name: 'Vite',
     description: 'Frontend build tool',
     runtime: 'bun',
+    kind: 'static',
+    spaFallback: true,
     installCommand: 'bun install --frozen-lockfile',
     buildCommand: 'bun run build',
     startCommand: 'bun run preview',
@@ -124,6 +148,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'Hono',
     description: 'Lightweight web framework',
     runtime: 'bun',
+    kind: 'api',
     installCommand: 'bun install --frozen-lockfile',
     buildCommand: 'bun run build',
     startCommand: 'bun run start',
@@ -135,6 +160,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'Elysia',
     description: 'Bun-first web framework',
     runtime: 'bun',
+    kind: 'api',
     installCommand: 'bun install --frozen-lockfile',
     buildCommand: 'bun run build',
     startCommand: 'bun run start',
@@ -146,6 +172,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'Express',
     description: 'Node.js web framework',
     runtime: 'node',
+    kind: 'api',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
     startCommand: 'node dist/index.js',
@@ -157,6 +184,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'Fastify',
     description: 'Fast Node.js web framework',
     runtime: 'node',
+    kind: 'api',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
     startCommand: 'node dist/index.js',
@@ -168,6 +196,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     name: 'Other',
     description: 'Custom application',
     runtime: 'bun',
+    kind: 'web_app',
     installCommand: 'bun install',
     buildCommand: 'bun run build',
     startCommand: 'bun run start',
@@ -175,6 +204,10 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     staticUrlPath: null
   }
 ];
+
+/** The kind a framework deploys as by default; unknown ids are web apps. */
+export const suggestProjectKind = (frameworkId: string | null): ProjectKind =>
+  (frameworkId ? getPreset(frameworkId)?.kind : undefined) ?? 'web_app';
 
 export function getPreset(id: string): FrameworkPreset | undefined {
   return FRAMEWORK_PRESETS.find(p => p.id === id);
@@ -186,3 +219,9 @@ export const FRAMEWORK_PRESET_OPTIONS = FRAMEWORK_PRESETS.map(p => ({
   label: p.name,
   description: p.description
 }));
+
+export const PROJECT_KINDS: readonly ProjectKind[] = [
+  'web_app',
+  'api',
+  'static'
+] as const;

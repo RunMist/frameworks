@@ -22,11 +22,24 @@ export type OrmPreset = {
   hooks?: Partial<Record<DeployHookId, string[]>>;
 };
 
+/**
+ * What a project deploys as. `web_app` and `api` run a long-lived process
+ * behind Caddy; `static` runs nothing: the build output is served as files.
+ */
+export type ProjectKind = 'web_app' | 'api' | 'static';
+
 export type FrameworkPreset = {
   id: string;
   name: string;
   description: string;
   runtime: 'bun' | 'node';
+  /** Default project kind suggested for this framework (user can override). */
+  kind: ProjectKind;
+  /**
+   * Static sites only: serve /index.html for unknown paths (client-side
+   * routing). Off means a missing page is a real 404.
+   */
+  spaFallback?: boolean;
   installCommand: string;
   buildCommand: string;
   startCommand: string;

@@ -21,6 +21,7 @@ export const DETECTION_RULES: readonly FrameworkDetectionRule[] = [
   { id: 'nuxt', matchPackages: ['nuxt', 'nuxt3'] },
   { id: 'sveltekit', matchPackages: ['@sveltejs/kit'] },
   { id: 'astro', matchPackages: ['astro'] },
+  { id: 'gatsby', matchPackages: ['gatsby'] },
   {
     id: 'react-router',
     matchPackages: ['@react-router/dev', '@remix-run/dev']

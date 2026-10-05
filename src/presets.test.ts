@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { FRAMEWORK_PRESETS, getPreset } from './presets';
+import {
+  FRAMEWORK_PRESETS,
+  getPreset,
+  PROJECT_KINDS,
+  suggestProjectKind
+} from './presets';
 import type { DeployHookId } from './types';
 
 const VALID_HOOK_IDS: DeployHookId[] = [
@@ -110,5 +115,30 @@ describe('framework presets', () => {
       const preset = getPreset(id);
       expect(preset!.cacheDirs).toBeUndefined();
     }
+  });
+});
+
+describe('project kinds', () => {
+  test('every preset declares a kind', () => {
+    for (const preset of FRAMEWORK_PRESETS) {
+      expect(PROJECT_KINDS).toContain(preset.kind);
+    }
+  });
+
+  test('suggestions: static site generators, APIs, web apps', () => {
+    expect(suggestProjectKind('vite')).toBe('static');
+    expect(suggestProjectKind('gatsby')).toBe('static');
+    expect(suggestProjectKind('hono')).toBe('api');
+    expect(suggestProjectKind('express')).toBe('api');
+    expect(suggestProjectKind('nextjs')).toBe('web_app');
+    expect(suggestProjectKind('nope')).toBe('web_app');
+    expect(suggestProjectKind(null)).toBe('web_app');
+  });
+
+  test('static presets: no start command needed, output dir set', () => {
+    const gatsby = getPreset('gatsby');
+    expect(gatsby?.outputDirectory).toBe('public');
+    expect(gatsby?.spaFallback).toBe(false);
+    expect(getPreset('vite')?.spaFallback).toBe(true);
   });
 });
