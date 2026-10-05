@@ -2,6 +2,7 @@ import { detectFramework } from './detect-framework';
 import { detectMonorepo } from './detect-monorepo';
 import { detectOrm } from './detect-orm';
 import { detectPackageManager, detectRuntime } from './detect-runtime';
+import { findNodePin, type NodePin } from './node-pin';
 import type { DetectedApp, RepoDetectionResult } from './types';
 
 /**
@@ -10,11 +11,19 @@ import type { DetectedApp, RepoDetectionResult } from './types';
  *
  * @param filePaths - All file paths in the repo (from git tree API)
  * @param packageJsonContents - Map of file path to parsed package.json content string
+ * @param pinFileContents - Map of file path to content for Node pin files
+ *   (`.nvmrc`, `.node-version`, `.tool-versions`, `mise.toml`, `.mise.toml`;
+ *   see `nodePinFilePaths`). Omit to skip pin detection.
  */
 export function analyzeRepo(
   filePaths: string[],
-  packageJsonContents: Map<string, string>
+  packageJsonContents: Map<string, string>,
+  pinFileContents: Map<string, string> = new Map()
 ): RepoDetectionResult {
+  const readFile = (path: string) =>
+    pinFileContents.get(path) ?? packageJsonContents.get(path);
+  const nodePinFor = (appPath: string): NodePin | null =>
+    findNodePin(readFile, appPath);
   const packageManager = detectPackageManager(filePaths);
   const monorepo = detectMonorepo(filePaths);
 
@@ -42,7 +51,8 @@ export function analyzeRepo(
         path: '.',
         framework: rootFramework,
         runtime: rootRuntime,
-        orm: detectOrm(rootParsed ?? {})
+        orm: detectOrm(rootParsed ?? {}),
+        nodePin: nodePinFor('.')
       });
     }
     return {
@@ -50,6 +60,7 @@ export function analyzeRepo(
       apps,
       rootFramework,
       rootRuntime,
+      rootNodePin: nodePinFor('.'),
       packageManager
     };
   }
@@ -70,7 +81,8 @@ export function analyzeRepo(
         path: `apps/${appDir}`,
         framework,
         runtime,
-        orm: detectOrm(parsed)
+        orm: detectOrm(parsed),
+        nodePin: nodePinFor(`apps/${appDir}`)
       });
     } catch {
       // Invalid JSON, skip this app
@@ -82,6 +94,7 @@ export function analyzeRepo(
     apps,
     rootFramework,
     rootRuntime,
+    rootNodePin: nodePinFor('.'),
     packageManager
   };
 }

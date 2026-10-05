@@ -1,3 +1,5 @@
+import type { NodePin } from './node-pin';
+
 export type DeployHookId =
   | 'after-install'
   | 'before-activate'
@@ -49,6 +51,8 @@ export type DetectedApp = {
   framework: string | null;
   runtime: 'bun' | 'node' | null;
   orm: OrmPresetId;
+  /** The repo's Node version pin for this app (nearest dir first). */
+  nodePin: NodePin | null;
 };
 
 export type MonorepoInfo = {
@@ -61,5 +65,6 @@ export type RepoDetectionResult = {
   apps: DetectedApp[];
   rootFramework: string | null;
   rootRuntime: 'bun' | 'node' | null;
+  rootNodePin: NodePin | null;
   packageManager: 'bun' | 'npm' | 'yarn' | 'pnpm' | null;
 };

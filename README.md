@@ -46,6 +46,25 @@ getPreset(frameworkName)           // → FrameworkPreset | null
 getOrmPreset(ormName)              // → OrmPreset | null
 ```
 
+### Node versions
+
+Dynamic, no hardcoded version list. Feed live release lines (nodejs/Release
+`schedule.json` + `nodejs.org/dist/index.json`) or fall back to the bundled
+`NODE_RELEASE_SNAPSHOT`.
+
+```typescript
+const lines = nodeLinesOrSnapshot(liveLines)
+const today = todayIso()
+supportedNodeLines(lines, today)   // picker: LTS lines still getting fixes
+endOfLifeNodeLines(lines, today)   // "Older versions" override list
+recommendedNodeMajor(lines, today) // newest active LTS
+nodeLineStatus(line, today)        // active_lts | maintenance_lts | current | eol_soon | eol | unreleased
+
+const pin = findNodePin(readFile, appPath) // .nvmrc > .node-version > .tool-versions/mise.toml > volta > engines
+resolveNodeRuntime({ setting: 'auto', pin, lines, today })
+// → { major: 12, version: '12.22.12', source: '.nvmrc', status: 'eol', ... }
+```
+
 ## Testing
 
 ```bash

@@ -274,4 +274,59 @@ describe('analyzeRepo', () => {
     expect(result.apps[0]!.orm).toBe('prisma');
     expect(result.apps[0]!.path).toBe('.');
   });
+
+  test('given pin files, when analyzing, then each app gets its nearest Node pin', () => {
+    const filePaths = [
+      'package.json',
+      'turbo.json',
+      '.nvmrc',
+      'apps/web/package.json',
+      'apps/web/.node-version',
+      'apps/api/package.json'
+    ];
+    const packageJsonContents = new Map<string, string>([
+      ['package.json', JSON.stringify({ workspaces: ['apps/*'] })],
+      [
+        'apps/web/package.json',
+        JSON.stringify({ dependencies: { next: '15.0.0' } })
+      ],
+      [
+        'apps/api/package.json',
+        JSON.stringify({ dependencies: { express: '5.0.0' } })
+      ]
+    ]);
+    const pinFiles = new Map<string, string>([
+      ['.nvmrc', '12.2.0\n'],
+      ['apps/web/.node-version', '22']
+    ]);
+
+    const result = analyzeRepo(filePaths, packageJsonContents, pinFiles);
+
+    expect(result.rootNodePin).toEqual({
+      source: '.nvmrc',
+      path: '.nvmrc',
+      raw: '12.2.0'
+    });
+    const byPath = Object.fromEntries(
+      result.apps.map(a => [a.path, a.nodePin])
+    );
+    expect(byPath['apps/web']?.path).toBe('apps/web/.node-version');
+    expect(byPath['apps/api']?.path).toBe('.nvmrc');
+  });
+
+  test('given engines in package.json only, when analyzing, then the pin comes from engines', () => {
+    const result = analyzeRepo(
+      ['package.json'],
+      new Map([
+        [
+          'package.json',
+          JSON.stringify({
+            dependencies: { express: '5.0.0' },
+            engines: { node: '>=18' }
+          })
+        ]
+      ])
+    );
+    expect(result.rootNodePin?.source).toBe('engines.node');
+  });
 });

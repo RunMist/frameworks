@@ -6,6 +6,37 @@ export { detectMonorepo } from './detect-monorepo';
 export type { OrmDetectionRule } from './detect-orm';
 export { detectOrm, ORM_DETECTION_RULES } from './detect-orm';
 export { detectPackageManager, detectRuntime } from './detect-runtime';
+export type {
+  NodePin,
+  NodePinSource,
+  NodeRuntimeSource,
+  ReadRepoFile,
+  ResolvedNodeRuntime
+} from './node-pin';
+export {
+  explicitNodeMajor,
+  findNodePin,
+  NODE_PIN_FILES,
+  NODE_VERSION_AUTO,
+  nodePinFilePaths,
+  nodeVersionSetting,
+  pinSearchDirs,
+  rangeAllowsMajor,
+  resolveNodePin,
+  resolveNodeRuntime
+} from './node-pin';
+export type { NodeLineStatus, NodeReleaseLine } from './node-releases';
+export {
+  endOfLifeNodeLines,
+  findNodeLine,
+  NODE_EOL_SOON_DAYS,
+  NODE_RELEASE_SNAPSHOT,
+  nodeLineStatus,
+  nodeLinesOrSnapshot,
+  recommendedNodeMajor,
+  supportedNodeLines,
+  todayIso
+} from './node-releases';
 export {
   getOrmPreset,
   ORM_PRESET_OPTIONS,
@@ -19,13 +50,8 @@ export {
   FRAMEWORK_PRESETS,
   getPreset
 } from './presets';
-export type { BunVersion, NodeVersion } from './runtime-versions';
-export {
-  BUN_VERSIONS,
-  DEFAULT_BUN_VERSION,
-  DEFAULT_NODE_VERSION,
-  NODE_VERSIONS
-} from './runtime-versions';
+export type { BunVersion } from './runtime-versions';
+export { BUN_VERSIONS, DEFAULT_BUN_VERSION } from './runtime-versions';
 export { SECURITY_WATCH_PACKAGES } from './security-packages';
 export type {
   DeployHookId,
