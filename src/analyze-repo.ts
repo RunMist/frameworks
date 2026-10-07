@@ -1,19 +1,31 @@
-import { detectAdapter, detectFramework } from './detect-framework';
+import {
+  detectAdapter,
+  detectFramework,
+  missingStartScript
+} from './detect-framework';
 import { detectMonorepo } from './detect-monorepo';
 import { detectOrm } from './detect-orm';
 import { detectPackageManager, detectRuntime } from './detect-runtime';
 import { findNodePin, type NodePin } from './node-pin';
+import { getPreset } from './presets';
 import type { DetectedApp, RepoDetectionResult } from './types';
 
 const adapterFields = (
   framework: string | null,
   packageJson: Record<string, unknown>
-): Pick<DetectedApp, 'kind' | 'outputDirectory' | 'hostAdapter'> => {
+): Pick<
+  DetectedApp,
+  'kind' | 'outputDirectory' | 'hostAdapter' | 'missingStartScript'
+> => {
   const adapter = detectAdapter(framework, packageJson);
   return {
     kind: adapter?.kind ?? null,
     outputDirectory: adapter?.outputDirectory ?? null,
-    hostAdapter: adapter?.hostAdapter ?? null
+    hostAdapter: adapter?.hostAdapter ?? null,
+    missingStartScript: missingStartScript(
+      framework ? getPreset(framework)?.startCommand : null,
+      packageJson as { scripts?: Record<string, string> }
+    )
   };
 };
 

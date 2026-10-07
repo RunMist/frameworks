@@ -83,3 +83,37 @@ describe('analyzeRepo adapter fields', () => {
     });
   });
 });
+
+describe('missingStartScript', () => {
+  test('Express without a start script is flagged', () => {
+    const result = analyzeRepo(
+      ['package.json', 'src/index.ts'],
+      new Map([['package.json', JSON.stringify(deps('express'))]])
+    );
+    expect(result.apps[0]?.missingStartScript).toBe(true);
+  });
+
+  test('Express with a start script, as in the Express docs, is not', () => {
+    const result = analyzeRepo(
+      ['package.json', 'app.js'],
+      new Map([
+        [
+          'package.json',
+          JSON.stringify({
+            ...deps('express'),
+            scripts: { start: 'node app.js' }
+          })
+        ]
+      ])
+    );
+    expect(result.apps[0]?.missingStartScript).toBe(false);
+  });
+
+  test('frameworks whose preset runs its own server entry are never flagged', () => {
+    const result = analyzeRepo(
+      ['package.json'],
+      new Map([['package.json', JSON.stringify(deps('next'))]])
+    );
+    expect(result.apps[0]?.missingStartScript).toBe(false);
+  });
+});

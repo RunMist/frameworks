@@ -7,7 +7,8 @@ export type {
 export {
   DETECTION_RULES,
   detectAdapter,
-  detectFramework
+  detectFramework,
+  missingStartScript
 } from './detect-framework';
 export { detectMonorepo } from './detect-monorepo';
 export type { OrmDetectionRule } from './detect-orm';

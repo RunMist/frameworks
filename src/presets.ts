@@ -175,7 +175,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     kind: 'api',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
-    startCommand: 'node dist/index.js',
+    startCommand: 'npm start',
     outputDirectory: 'dist',
     staticUrlPath: null
   },
@@ -187,7 +187,7 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     kind: 'api',
     installCommand: 'npm install',
     buildCommand: 'npm run build',
-    startCommand: 'node dist/index.js',
+    startCommand: 'npm start',
     outputDirectory: 'dist',
     staticUrlPath: null
   },

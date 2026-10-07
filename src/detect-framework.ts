@@ -120,3 +120,21 @@ export function detectAdapter(
 
   return null;
 }
+
+const START_SCRIPT_COMMAND =
+  /^(npm start|(npm|bun|pnpm|yarn) run start|(pnpm|yarn) start)$/;
+
+/**
+ * True when the framework's preset starts the app through the package's own
+ * `start` script (Express, Fastify, Hono, Elysia: the framework's docs put
+ * the entry file there) and package.json has none. Repos built for Vercel's
+ * zero-config Express/Hono often have no start script and no `listen()`.
+ */
+export function missingStartScript(
+  presetStartCommand: string | null | undefined,
+  packageJson: { scripts?: Record<string, string> }
+): boolean {
+  if (!presetStartCommand || !START_SCRIPT_COMMAND.test(presetStartCommand))
+    return false;
+  return !packageJson.scripts?.start;
+}

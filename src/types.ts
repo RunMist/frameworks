@@ -72,6 +72,8 @@ export type DetectedApp = {
   outputDirectory?: string | null;
   /** Host-only adapter that has to be swapped before deploying here. */
   hostAdapter?: string | null;
+  /** The preset starts the app with the `start` script and there is none. */
+  missingStartScript?: boolean;
 };
 
 export type MonorepoInfo = {
