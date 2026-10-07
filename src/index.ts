@@ -1,7 +1,14 @@
 export { analyzeRepo } from './analyze-repo';
 export { MONOREPO_CACHE_DIRS, resolveCacheDirs } from './cache-dirs';
-export type { FrameworkDetectionRule } from './detect-framework';
-export { DETECTION_RULES, detectFramework } from './detect-framework';
+export type {
+  AdapterDetection,
+  FrameworkDetectionRule
+} from './detect-framework';
+export {
+  DETECTION_RULES,
+  detectAdapter,
+  detectFramework
+} from './detect-framework';
 export { detectMonorepo } from './detect-monorepo';
 export type { OrmDetectionRule } from './detect-orm';
 export { detectOrm, ORM_DETECTION_RULES } from './detect-orm';

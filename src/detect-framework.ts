@@ -1,3 +1,5 @@
+import type { ProjectKind } from './types';
+
 type PackageJson = {
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
@@ -49,6 +51,71 @@ export function detectFramework(packageJson: PackageJson): string | null {
     if (hasDep) {
       return rule.id;
     }
+  }
+
+  return null;
+}
+
+/**
+ * What a framework's build adapter makes of the app. Astro and SvelteKit
+ * build for whichever host their adapter targets, so the package alone
+ * doesn't say whether the result is a server or plain files.
+ */
+export type AdapterDetection = {
+  kind: ProjectKind;
+  /** Build output to serve, when `kind` is static and differs from the preset. */
+  outputDirectory: string | null;
+  /**
+   * An adapter that builds for one hosting platform only (e.g.
+   * `@astrojs/vercel`): its output doesn't run anywhere else, so the app
+   * needs the Node or static adapter before it can deploy here.
+   */
+  hostAdapter: string | null;
+};
+
+const ASTRO_HOST_ADAPTERS = [
+  '@astrojs/vercel',
+  '@astrojs/netlify',
+  '@astrojs/cloudflare'
+];
+
+// adapter-auto picks an adapter from the build environment and builds
+// nothing it can run on a plain server.
+const SVELTEKIT_HOST_ADAPTERS = [
+  '@sveltejs/adapter-auto',
+  '@sveltejs/adapter-vercel',
+  '@sveltejs/adapter-netlify',
+  '@sveltejs/adapter-cloudflare',
+  '@sveltejs/adapter-cloudflare-workers'
+];
+
+/** Null when the framework has no adapter or none is found. */
+export function detectAdapter(
+  framework: string | null,
+  packageJson: PackageJson
+): AdapterDetection | null {
+  const all = { ...packageJson.dependencies, ...packageJson.devDependencies };
+  const has = (pkg: string) => pkg in all;
+  const hostAdapter = (candidates: string[]) => candidates.find(has) ?? null;
+
+  if (framework === 'astro') {
+    if (has('@astrojs/node'))
+      return { kind: 'web_app', outputDirectory: null, hostAdapter: null };
+    const host = hostAdapter(ASTRO_HOST_ADAPTERS);
+    if (host)
+      return { kind: 'web_app', outputDirectory: null, hostAdapter: host };
+    // No adapter: Astro can only build static pages, into dist/.
+    return { kind: 'static', outputDirectory: 'dist', hostAdapter: null };
+  }
+
+  if (framework === 'sveltekit') {
+    if (has('@sveltejs/adapter-static'))
+      return { kind: 'static', outputDirectory: 'build', hostAdapter: null };
+    if (has('@sveltejs/adapter-node'))
+      return { kind: 'web_app', outputDirectory: null, hostAdapter: null };
+    const host = hostAdapter(SVELTEKIT_HOST_ADAPTERS);
+    if (host)
+      return { kind: 'web_app', outputDirectory: null, hostAdapter: host };
   }
 
   return null;

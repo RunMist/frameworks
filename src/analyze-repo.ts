@@ -1,9 +1,21 @@
-import { detectFramework } from './detect-framework';
+import { detectAdapter, detectFramework } from './detect-framework';
 import { detectMonorepo } from './detect-monorepo';
 import { detectOrm } from './detect-orm';
 import { detectPackageManager, detectRuntime } from './detect-runtime';
 import { findNodePin, type NodePin } from './node-pin';
 import type { DetectedApp, RepoDetectionResult } from './types';
+
+const adapterFields = (
+  framework: string | null,
+  packageJson: Record<string, unknown>
+): Pick<DetectedApp, 'kind' | 'outputDirectory' | 'hostAdapter'> => {
+  const adapter = detectAdapter(framework, packageJson);
+  return {
+    kind: adapter?.kind ?? null,
+    outputDirectory: adapter?.outputDirectory ?? null,
+    hostAdapter: adapter?.hostAdapter ?? null
+  };
+};
 
 /**
  * Analyze a repository's file tree and package.json contents to detect
@@ -52,7 +64,8 @@ export function analyzeRepo(
         framework: rootFramework,
         runtime: rootRuntime,
         orm: detectOrm(rootParsed ?? {}),
-        nodePin: nodePinFor('.')
+        nodePin: nodePinFor('.'),
+        ...adapterFields(rootFramework, rootParsed ?? {})
       });
     }
     return {
@@ -82,7 +95,8 @@ export function analyzeRepo(
         framework,
         runtime,
         orm: detectOrm(parsed),
-        nodePin: nodePinFor(`apps/${appDir}`)
+        nodePin: nodePinFor(`apps/${appDir}`),
+        ...adapterFields(framework, parsed)
       });
     } catch {
       // Invalid JSON, skip this app

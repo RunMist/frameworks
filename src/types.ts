@@ -66,6 +66,12 @@ export type DetectedApp = {
   orm: OrmPresetId;
   /** The repo's Node version pin for this app (nearest dir first). */
   nodePin: NodePin | null;
+  /** From the framework's adapter (`detectAdapter`); null means use the preset. */
+  kind?: ProjectKind | null;
+  /** Static build output from the adapter, overriding the preset's. */
+  outputDirectory?: string | null;
+  /** Host-only adapter that has to be swapped before deploying here. */
+  hostAdapter?: string | null;
 };
 
 export type MonorepoInfo = {
