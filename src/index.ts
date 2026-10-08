@@ -13,7 +13,12 @@ export {
 export { detectMonorepo } from './detect-monorepo';
 export type { OrmDetectionRule } from './detect-orm';
 export { detectOrm, ORM_DETECTION_RULES } from './detect-orm';
-export { detectPackageManager, detectRuntime } from './detect-runtime';
+export type { PnpmLockfileMismatch } from './detect-runtime';
+export {
+  detectPackageManager,
+  detectPnpmLockfileMismatch,
+  detectRuntime
+} from './detect-runtime';
 export type {
   NodePin,
   NodePinSource,

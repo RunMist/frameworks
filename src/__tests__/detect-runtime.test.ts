@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import { detectPackageManager, detectRuntime } from '../detect-runtime';
+import {
+  detectPackageManager,
+  detectPnpmLockfileMismatch,
+  detectRuntime
+} from '../detect-runtime';
 
 describe('detectRuntime', () => {
   test('returns bun for tanstack-start', () => {
@@ -66,5 +70,49 @@ describe('detectPackageManager', () => {
 
   test('returns null when no lockfile found', () => {
     expect(detectPackageManager(['package.json', 'src/index.ts'])).toBe(null);
+  });
+});
+
+describe('detectPnpmLockfileMismatch', () => {
+  test('flags a pnpm 8 pin with a v9 lockfile (turborepo examples/basic)', () => {
+    expect(
+      detectPnpmLockfileMismatch(
+        'pnpm@8.15.6',
+        "lockfileVersion: '9.0'\n\nsettings:\n"
+      )
+    ).toEqual({ pinned: 'pnpm@8.15.6', lockfileVersion: '9.0', minMajor: 9 });
+  });
+
+  test('strips the corepack hash from the pin', () => {
+    expect(
+      detectPnpmLockfileMismatch(
+        'pnpm@7.33.0+sha512.abc',
+        "lockfileVersion: '6.0'"
+      )?.pinned
+    ).toBe('pnpm@7.33.0');
+  });
+
+  test('a pin new enough for the lockfile is fine', () => {
+    expect(
+      detectPnpmLockfileMismatch('pnpm@9.15.9', "lockfileVersion: '9.0'")
+    ).toBeNull();
+    expect(
+      detectPnpmLockfileMismatch('pnpm@10.0.0', "lockfileVersion: '6.0'")
+    ).toBeNull();
+  });
+
+  test('no pnpm pin, unknown or unquoted lockfile version', () => {
+    expect(
+      detectPnpmLockfileMismatch(undefined, "lockfileVersion: '9.0'")
+    ).toBeNull();
+    expect(
+      detectPnpmLockfileMismatch('yarn@1.22.22', "lockfileVersion: '9.0'")
+    ).toBeNull();
+    expect(
+      detectPnpmLockfileMismatch('pnpm@8.0.0', 'lockfileVersion: 5.2')
+    ).toBeNull();
+    expect(
+      detectPnpmLockfileMismatch('pnpm@8.0.0', 'lockfileVersion: 9.0')?.minMajor
+    ).toBe(9);
   });
 });

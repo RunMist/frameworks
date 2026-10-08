@@ -330,3 +330,32 @@ describe('analyzeRepo', () => {
     expect(result.rootNodePin?.source).toBe('engines.node');
   });
 });
+
+describe('analyzeRepo pnpm pin vs lockfile', () => {
+  const filePaths = ['package.json', 'pnpm-lock.yaml', 'apps/web/package.json'];
+  const pkgs = new Map([
+    ['package.json', JSON.stringify({ packageManager: 'pnpm@8.15.6' })],
+    [
+      'apps/web/package.json',
+      JSON.stringify({ dependencies: { next: '15.0.8' } })
+    ]
+  ]);
+
+  test('reports the mismatch when given the lockfile', () => {
+    const result = analyzeRepo(
+      filePaths,
+      pkgs,
+      new Map(),
+      "lockfileVersion: '9.0'\n"
+    );
+    expect(result.pnpmLockfileMismatch).toEqual({
+      pinned: 'pnpm@8.15.6',
+      lockfileVersion: '9.0',
+      minMajor: 9
+    });
+  });
+
+  test('skips the check without the lockfile', () => {
+    expect(analyzeRepo(filePaths, pkgs).pnpmLockfileMismatch).toBeNull();
+  });
+});

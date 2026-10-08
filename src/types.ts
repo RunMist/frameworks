@@ -1,3 +1,4 @@
+import type { PnpmLockfileMismatch } from './detect-runtime';
 import type { NodePin } from './node-pin';
 
 export type DeployHookId =
@@ -88,4 +89,6 @@ export type RepoDetectionResult = {
   rootRuntime: 'bun' | 'node' | null;
   rootNodePin: NodePin | null;
   packageManager: 'bun' | 'npm' | 'yarn' | 'pnpm' | null;
+  /** `packageManager` pins a pnpm too old for the lockfile (install fails). */
+  pnpmLockfileMismatch?: PnpmLockfileMismatch | null;
 };

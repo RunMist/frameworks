@@ -5,7 +5,11 @@ import {
 } from './detect-framework';
 import { detectMonorepo } from './detect-monorepo';
 import { detectOrm } from './detect-orm';
-import { detectPackageManager, detectRuntime } from './detect-runtime';
+import {
+  detectPackageManager,
+  detectPnpmLockfileMismatch,
+  detectRuntime
+} from './detect-runtime';
 import { findNodePin, type NodePin } from './node-pin';
 import { getPreset } from './presets';
 import type { DetectedApp, RepoDetectionResult } from './types';
@@ -38,11 +42,15 @@ const adapterFields = (
  * @param pinFileContents - Map of file path to content for Node pin files
  *   (`.nvmrc`, `.node-version`, `.tool-versions`, `mise.toml`, `.mise.toml`;
  *   see `nodePinFilePaths`). Omit to skip pin detection.
+ * @param pnpmLockfile - Root `pnpm-lock.yaml` contents (the first line is
+ *   enough). Only needed when the root pins `packageManager` to pnpm; omit
+ *   to skip the pin/lockfile check.
  */
 export function analyzeRepo(
   filePaths: string[],
   packageJsonContents: Map<string, string>,
-  pinFileContents: Map<string, string> = new Map()
+  pinFileContents: Map<string, string> = new Map(),
+  pnpmLockfile?: string
 ): RepoDetectionResult {
   const readFile = (path: string) =>
     pinFileContents.get(path) ?? packageJsonContents.get(path);
@@ -66,6 +74,11 @@ export function analyzeRepo(
     }
   }
 
+  const pnpmLockfileMismatch =
+    pnpmLockfile === undefined
+      ? null
+      : detectPnpmLockfileMismatch(rootParsed?.packageManager, pnpmLockfile);
+
   if (!monorepo.isMonorepo) {
     // Single-app repo
     const apps: DetectedApp[] = [];
@@ -86,7 +99,8 @@ export function analyzeRepo(
       rootFramework,
       rootRuntime,
       rootNodePin: nodePinFor('.'),
-      packageManager
+      packageManager,
+      pnpmLockfileMismatch
     };
   }
 
@@ -121,6 +135,7 @@ export function analyzeRepo(
     rootFramework,
     rootRuntime,
     rootNodePin: nodePinFor('.'),
-    packageManager
+    packageManager,
+    pnpmLockfileMismatch
   };
 }
