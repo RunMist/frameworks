@@ -130,6 +130,22 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     cacheDirs: ['.cache']
   },
   {
+    id: 'docusaurus',
+    name: 'Docusaurus',
+    description: 'React documentation site generator',
+    runtime: 'node',
+    kind: 'static',
+    // Emits one HTML file per route plus its own 404.html.
+    spaFallback: false,
+    installCommand: 'npm ci',
+    buildCommand: 'npm run build',
+    startCommand: '',
+    outputDirectory: 'build',
+    staticUrlPath: null,
+    // Bundler persistent cache.
+    cacheDirs: ['node_modules/.cache']
+  },
+  {
     id: 'vite',
     name: 'Vite',
     description: 'Frontend build tool',

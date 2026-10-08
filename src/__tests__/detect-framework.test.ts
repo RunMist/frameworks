@@ -179,3 +179,23 @@ describe('gatsby', () => {
     ).toBe('gatsby');
   });
 });
+
+describe('docusaurus', () => {
+  test('given @docusaurus/core in dependencies, when detecting, then docusaurus', () => {
+    expect(
+      detectFramework({
+        dependencies: {
+          '@docusaurus/core': '3.10.2',
+          '@docusaurus/preset-classic': '3.10.2',
+          react: '^19.0.0'
+        }
+      })
+    ).toBe('docusaurus');
+  });
+
+  test('given only the v1 docusaurus package, when detecting, then not docusaurus', () => {
+    expect(
+      detectFramework({ devDependencies: { docusaurus: '^1.12.0' } })
+    ).toBeNull();
+  });
+});

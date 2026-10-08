@@ -128,6 +128,7 @@ describe('project kinds', () => {
   test('suggestions: static site generators, APIs, web apps', () => {
     expect(suggestProjectKind('vite')).toBe('static');
     expect(suggestProjectKind('gatsby')).toBe('static');
+    expect(suggestProjectKind('docusaurus')).toBe('static');
     expect(suggestProjectKind('hono')).toBe('api');
     expect(suggestProjectKind('express')).toBe('api');
     expect(suggestProjectKind('nextjs')).toBe('web_app');
@@ -140,5 +141,7 @@ describe('project kinds', () => {
     expect(gatsby?.outputDirectory).toBe('public');
     expect(gatsby?.spaFallback).toBe(false);
     expect(getPreset('vite')?.spaFallback).toBe(true);
+    expect(getPreset('docusaurus')?.outputDirectory).toBe('build');
+    expect(getPreset('docusaurus')?.spaFallback).toBe(false);
   });
 });
