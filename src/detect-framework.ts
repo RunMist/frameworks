@@ -90,14 +90,50 @@ const SVELTEKIT_HOST_ADAPTERS = [
   '@sveltejs/adapter-cloudflare-workers'
 ];
 
-/** Null when the framework has no adapter or none is found. */
+const NEXT_CONFIG_FILE = /^(apps\/[^/]+\/)?next\.config\.(js|mjs|cjs|ts|mts)$/;
+
+/**
+ * The tree paths a caller must fetch for adapter detection (besides
+ * package.json): Next.js config files at the root and in `apps/<app>/`.
+ */
+export const frameworkConfigFilePaths = (filePaths: string[]) =>
+  filePaths.filter(path => NEXT_CONFIG_FILE.test(path));
+
+// Block comments, and line comments not preceded by ":" (keeps URLs).
+const stripJsComments = (source: string) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+
+/**
+ * Next.js with `output: 'export'` builds plain files into `out/` (or
+ * `distDir`) and `next start` refuses to serve them, so it is a static
+ * site. Any other Next.js config builds `.next/` for `next start`.
+ */
+const detectNextExport = (nextConfig: string): AdapterDetection | null => {
+  const config = stripJsComments(nextConfig);
+  if (!/\boutput\s*:\s*['"`]export['"`]/.test(config)) return null;
+  const distDir = /\bdistDir\s*:\s*['"`]([^'"`]+)['"`]/.exec(config)?.[1];
+  return {
+    kind: 'static',
+    outputDirectory: distDir?.replace(/^\.\//, '') ?? 'out',
+    hostAdapter: null
+  };
+};
+
+/**
+ * Null when the framework has no adapter or none is found. `nextConfig` is
+ * the app's `next.config.*` contents, when it has one.
+ */
 export function detectAdapter(
   framework: string | null,
-  packageJson: PackageJson
+  packageJson: PackageJson,
+  nextConfig?: string | null
 ): AdapterDetection | null {
   const all = { ...packageJson.dependencies, ...packageJson.devDependencies };
   const has = (pkg: string) => pkg in all;
   const hostAdapter = (candidates: string[]) => candidates.find(has) ?? null;
+
+  if (framework === 'nextjs')
+    return nextConfig ? detectNextExport(nextConfig) : null;
 
   if (framework === 'astro') {
     if (has('@astrojs/node'))

@@ -1,6 +1,7 @@
 import {
   detectAdapter,
   detectFramework,
+  frameworkConfigFilePaths,
   missingStartScript
 } from './detect-framework';
 import { detectMonorepo } from './detect-monorepo';
@@ -16,12 +17,13 @@ import type { DetectedApp, RepoDetectionResult } from './types';
 
 const adapterFields = (
   framework: string | null,
-  packageJson: Record<string, unknown>
+  packageJson: Record<string, unknown>,
+  nextConfig: string | null
 ): Pick<
   DetectedApp,
   'kind' | 'outputDirectory' | 'hostAdapter' | 'missingStartScript'
 > => {
-  const adapter = detectAdapter(framework, packageJson);
+  const adapter = detectAdapter(framework, packageJson, nextConfig);
   return {
     kind: adapter?.kind ?? null,
     outputDirectory: adapter?.outputDirectory ?? null,
@@ -45,17 +47,29 @@ const adapterFields = (
  * @param pnpmLockfile - Root `pnpm-lock.yaml` contents (the first line is
  *   enough). Only needed when the root pins `packageManager` to pnpm; omit
  *   to skip the pin/lockfile check.
+ * @param configFileContents - Map of file path to content for framework
+ *   config files (see `frameworkConfigFilePaths`). Omit to skip config
+ *   detection (a Next.js static export is then detected as a web app).
  */
 export function analyzeRepo(
   filePaths: string[],
   packageJsonContents: Map<string, string>,
   pinFileContents: Map<string, string> = new Map(),
-  pnpmLockfile?: string
+  pnpmLockfile?: string,
+  configFileContents: Map<string, string> = new Map()
 ): RepoDetectionResult {
   const readFile = (path: string) =>
     pinFileContents.get(path) ?? packageJsonContents.get(path);
   const nodePinFor = (appPath: string): NodePin | null =>
     findNodePin(readFile, appPath);
+  const configPaths = frameworkConfigFilePaths(filePaths);
+  const nextConfigFor = (appPath: string): string | null => {
+    const prefix = appPath === '.' ? '' : `${appPath}/`;
+    const path = configPaths.find(
+      p => p.startsWith(prefix) && !p.slice(prefix.length).includes('/')
+    );
+    return (path && configFileContents.get(path)) ?? null;
+  };
   const packageManager = detectPackageManager(filePaths);
   const monorepo = detectMonorepo(filePaths);
 
@@ -90,7 +104,7 @@ export function analyzeRepo(
         runtime: rootRuntime,
         orm: detectOrm(rootParsed ?? {}),
         nodePin: nodePinFor('.'),
-        ...adapterFields(rootFramework, rootParsed ?? {})
+        ...adapterFields(rootFramework, rootParsed ?? {}, nextConfigFor('.'))
       });
     }
     return {
@@ -122,7 +136,7 @@ export function analyzeRepo(
         runtime,
         orm: detectOrm(parsed),
         nodePin: nodePinFor(`apps/${appDir}`),
-        ...adapterFields(framework, parsed)
+        ...adapterFields(framework, parsed, nextConfigFor(`apps/${appDir}`))
       });
     } catch {
       // Invalid JSON, skip this app

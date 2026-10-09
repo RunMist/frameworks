@@ -8,6 +8,7 @@ export {
   DETECTION_RULES,
   detectAdapter,
   detectFramework,
+  frameworkConfigFilePaths,
   missingStartScript
 } from './detect-framework';
 export { detectMonorepo } from './detect-monorepo';
