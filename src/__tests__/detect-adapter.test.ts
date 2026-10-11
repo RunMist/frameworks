@@ -98,16 +98,24 @@ describe('Next.js static export', () => {
     ).toBeNull();
   });
 
-  test('config paths are the root and apps/<app>/ next.config files', () => {
+  test('config paths are the next.config files in each app dir', () => {
     expect(
       frameworkConfigFilePaths([
         'next.config.mjs',
+        'apps/web/package.json',
         'apps/web/next.config.ts',
         'apps/web/src/next.config.js',
         'packages/ui/next.config.js',
+        'examples/blog/package.json',
+        'examples/blog/pnpm-lock.yaml',
+        'examples/blog/next.config.ts',
         'package.json'
       ])
-    ).toEqual(['next.config.mjs', 'apps/web/next.config.ts']);
+    ).toEqual([
+      'next.config.mjs',
+      'apps/web/next.config.ts',
+      'examples/blog/next.config.ts'
+    ]);
   });
 
   test('analyzeRepo reads each app its own config', () => {

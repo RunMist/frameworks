@@ -1,3 +1,4 @@
+import { appDirs, dirOf } from './detect-monorepo';
 import type { ProjectKind } from './types';
 
 type PackageJson = {
@@ -90,14 +91,19 @@ const SVELTEKIT_HOST_ADAPTERS = [
   '@sveltejs/adapter-cloudflare-workers'
 ];
 
-const NEXT_CONFIG_FILE = /^(apps\/[^/]+\/)?next\.config\.(js|mjs|cjs|ts|mts)$/;
+const NEXT_CONFIG_FILE = /(^|\/)next\.config\.(js|mjs|cjs|ts|mts)$/;
 
 /**
  * The tree paths a caller must fetch for adapter detection (besides
- * package.json): Next.js config files at the root and in `apps/<app>/`.
+ * package.json): Next.js config files in each app dir (the root,
+ * `apps/<app>/` and standalone apps, see `appDirs`).
  */
-export const frameworkConfigFilePaths = (filePaths: string[]) =>
-  filePaths.filter(path => NEXT_CONFIG_FILE.test(path));
+export const frameworkConfigFilePaths = (filePaths: string[]) => {
+  const dirs = appDirs(filePaths);
+  return filePaths.filter(
+    path => NEXT_CONFIG_FILE.test(path) && dirs.has(dirOf(path))
+  );
+};
 
 // Block comments, and line comments not preceded by ":" (keeps URLs).
 const stripJsComments = (source: string) =>

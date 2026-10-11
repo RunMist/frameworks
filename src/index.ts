@@ -1,4 +1,4 @@
-export { analyzeRepo } from './analyze-repo';
+export { analyzeRepo, detectionFilePaths } from './analyze-repo';
 export { MONOREPO_CACHE_DIRS, resolveCacheDirs } from './cache-dirs';
 export type {
   AdapterDetection,
@@ -11,7 +11,7 @@ export {
   frameworkConfigFilePaths,
   missingStartScript
 } from './detect-framework';
-export { detectMonorepo } from './detect-monorepo';
+export { detectMonorepo, standaloneAppDirs } from './detect-monorepo';
 export type { OrmDetectionRule } from './detect-orm';
 export { detectOrm, ORM_DETECTION_RULES } from './detect-orm';
 export type { PnpmLockfileMismatch } from './detect-runtime';

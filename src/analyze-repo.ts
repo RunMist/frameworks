@@ -4,14 +4,24 @@ import {
   frameworkConfigFilePaths,
   missingStartScript
 } from './detect-framework';
-import { detectMonorepo } from './detect-monorepo';
+import {
+  appDirs,
+  detectMonorepo,
+  dirOf,
+  standaloneAppDirs
+} from './detect-monorepo';
 import { detectOrm } from './detect-orm';
 import {
   detectPackageManager,
   detectPnpmLockfileMismatch,
   detectRuntime
 } from './detect-runtime';
-import { findNodePin, type NodePin } from './node-pin';
+import {
+  findNodePin,
+  type NodePin,
+  nodePinFilePaths,
+  pinSearchDirs
+} from './node-pin';
 import { getPreset } from './presets';
 import type { DetectedApp, RepoDetectionResult } from './types';
 
@@ -72,41 +82,65 @@ export function analyzeRepo(
   };
   const packageManager = detectPackageManager(filePaths);
   const monorepo = detectMonorepo(filePaths);
-
-  // Detect root-level framework
-  let rootFramework: string | null = null;
-  let rootRuntime: 'bun' | 'node' | null = null;
-  let rootParsed: Record<string, unknown> | null = null;
-  const rootPkgJson = packageJsonContents.get('package.json');
-  if (rootPkgJson) {
+  const parse = (path: string): Record<string, unknown> | null => {
     try {
-      rootParsed = JSON.parse(rootPkgJson);
-      rootFramework = detectFramework(rootParsed!);
-      rootRuntime = detectRuntime(rootFramework, filePaths);
+      return JSON.parse(packageJsonContents.get(path) ?? '');
     } catch {
-      // Invalid JSON, skip
+      return null;
     }
-  }
+  };
+  const appAt = (
+    path: string,
+    name: string,
+    parsed: Record<string, unknown>
+  ): DetectedApp => {
+    const framework = detectFramework(parsed);
+    return {
+      name,
+      path,
+      framework,
+      runtime: detectRuntime(framework, filePaths),
+      orm: detectOrm(parsed),
+      nodePin: nodePinFor(path),
+      ...adapterFields(framework, parsed, nextConfigFor(path))
+    };
+  };
+
+  const rootParsed = parse('package.json');
+  const rootFramework = rootParsed ? detectFramework(rootParsed) : null;
+  const rootRuntime = rootParsed
+    ? detectRuntime(rootFramework, filePaths)
+    : null;
 
   const pnpmLockfileMismatch =
     pnpmLockfile === undefined
       ? null
       : detectPnpmLockfileMismatch(rootParsed?.packageManager, pnpmLockfile);
 
+  // Apps nested with their own lockfile (tutorial and example repos).
+  // Only ones with a framework: a lockfile-carrying tool dir isn't an app.
+  const nestedApps = standaloneAppDirs(filePaths).flatMap(dir => {
+    const parsed = parse(`${dir}/package.json`);
+    if (!parsed) return [];
+    const app = appAt(dir, dir.split('/').pop() ?? dir, parsed);
+    return app.framework ? [app] : [];
+  });
+
   if (!monorepo.isMonorepo) {
-    // Single-app repo
+    // A root next to nested apps that has no build script is the repo's
+    // tooling (next-learn's root: lint and prettier, a `next` dep, no
+    // app), not an app. An API framework runs without a build.
+    const rootScripts = rootParsed?.scripts as
+      | Record<string, string>
+      | undefined;
+    const rootIsTooling =
+      nestedApps.length > 0 &&
+      !rootScripts?.build &&
+      getPreset(rootFramework ?? '')?.kind !== 'api';
     const apps: DetectedApp[] = [];
-    if (rootFramework) {
-      apps.push({
-        name: '.',
-        path: '.',
-        framework: rootFramework,
-        runtime: rootRuntime,
-        orm: detectOrm(rootParsed ?? {}),
-        nodePin: nodePinFor('.'),
-        ...adapterFields(rootFramework, rootParsed ?? {}, nextConfigFor('.'))
-      });
-    }
+    if (rootParsed && rootFramework && !rootIsTooling)
+      apps.push(appAt('.', '.', rootParsed));
+    apps.push(...nestedApps);
     return {
       isMonorepo: false,
       apps,
@@ -121,27 +155,11 @@ export function analyzeRepo(
   // Monorepo: analyze each app directory
   const apps: DetectedApp[] = [];
   for (const appDir of monorepo.appDirs) {
-    const pkgPath = `apps/${appDir}/package.json`;
-    const pkgContent = packageJsonContents.get(pkgPath);
-    if (!pkgContent) continue;
-
-    try {
-      const parsed = JSON.parse(pkgContent);
-      const framework = detectFramework(parsed);
-      const runtime = detectRuntime(framework, filePaths);
-      apps.push({
-        name: appDir,
-        path: `apps/${appDir}`,
-        framework,
-        runtime,
-        orm: detectOrm(parsed),
-        nodePin: nodePinFor(`apps/${appDir}`),
-        ...adapterFields(framework, parsed, nextConfigFor(`apps/${appDir}`))
-      });
-    } catch {
-      // Invalid JSON, skip this app
-    }
+    const parsed = parse(`apps/${appDir}/package.json`);
+    if (parsed) apps.push(appAt(`apps/${appDir}`, appDir, parsed));
   }
+  for (const app of nestedApps)
+    if (!apps.some(listed => listed.path === app.path)) apps.push(app);
 
   return {
     isMonorepo: true,
@@ -151,5 +169,24 @@ export function analyzeRepo(
     rootNodePin: nodePinFor('.'),
     packageManager,
     pnpmLockfileMismatch
+  };
+}
+
+/**
+ * The tree paths a caller fetches for analyzeRepo: package.json and Node
+ * pin files in each app dir and its parents (pins are searched nearest
+ * first, see `pinSearchDirs`), and the apps' framework configs.
+ */
+export function detectionFilePaths(filePaths: string[]) {
+  const searchDirs = new Set([...appDirs(filePaths)].flatMap(pinSearchDirs));
+  const inSearchDirs = (path: string) => searchDirs.has(dirOf(path));
+  return {
+    packageJsons: filePaths.filter(
+      path =>
+        (path === 'package.json' || path.endsWith('/package.json')) &&
+        inSearchDirs(path)
+    ),
+    pinFiles: nodePinFilePaths(filePaths).filter(inSearchDirs),
+    configFiles: frameworkConfigFilePaths(filePaths)
   };
 }
