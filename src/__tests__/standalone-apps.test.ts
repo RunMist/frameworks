@@ -175,3 +175,75 @@ describe('detectionFilePaths', () => {
     ]);
   });
 });
+
+describe('typed App Path', () => {
+  // A workspace-style package outside apps/ with no lockfile of its own:
+  // only the typed path finds it.
+  const tree = [
+    'package.json',
+    'package-lock.json',
+    'site/web/package.json',
+    'site/web/next.config.mjs'
+  ];
+  const contents = () =>
+    new Map([
+      ['package.json', JSON.stringify({ scripts: { lint: 'eslint .' } })],
+      [
+        'site/web/package.json',
+        JSON.stringify({
+          scripts: { build: 'next build' },
+          dependencies: { next: '16.0.0', 'drizzle-orm': '0.44.0' },
+          engines: { node: '22.x' }
+        })
+      ]
+    ]);
+
+  test('is detected when it has a package.json', () => {
+    const result = analyzeRepo(
+      tree,
+      contents(),
+      undefined,
+      undefined,
+      undefined,
+      './site/web/'
+    );
+    const app = result.apps.find(a => a.path === 'site/web');
+    expect(app?.framework).toBe('nextjs');
+    expect(app?.orm).toBe('drizzle');
+    expect(app?.nodePin?.raw).toBe('22.x');
+  });
+
+  test('is not listed without the typed path', () => {
+    expect(analyzeRepo(tree, contents()).apps).toEqual([]);
+  });
+
+  test('its package.json is fetched', () => {
+    expect(detectionFilePaths(tree, 'site/web').packageJsons).toContain(
+      'site/web/package.json'
+    );
+    expect(detectionFilePaths(tree).packageJsons).not.toContain(
+      'site/web/package.json'
+    );
+  });
+
+  test('a path without package.json, or escaping the repo, is ignored', () => {
+    for (const appPath of ['site', '../x', 'node_modules/next', '.'])
+      expect(detectionFilePaths(tree, appPath).packageJsons).toEqual([
+        'package.json'
+      ]);
+  });
+
+  test('a typed path already listed is not duplicated', () => {
+    const apps = analyzeRepo(
+      nextLearnTree,
+      nextLearnContents(),
+      undefined,
+      undefined,
+      undefined,
+      'dashboard/final-example'
+    ).apps;
+    expect(apps.filter(a => a.path === 'dashboard/final-example')).toHaveLength(
+      1
+    );
+  });
+});

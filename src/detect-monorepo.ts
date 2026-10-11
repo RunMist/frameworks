@@ -36,16 +36,37 @@ export function standaloneAppDirs(filePaths: string[]): string[] {
 }
 
 /**
- * Every dir analyzeRepo reads an app from: the root, `apps/<app>` and the
- * standalone app dirs.
+ * The App Path a user typed, as a tree dir, when it has a package.json:
+ * detection reads it like a standalone app even when nothing else would
+ * list it (no lockfile of its own, not under `apps/`). Null otherwise.
  */
-export function appDirs(filePaths: string[]): Set<string> {
+export function typedAppDir(
+  filePaths: string[],
+  appPath?: string
+): string | null {
+  const dir = (appPath ?? '')
+    .trim()
+    .replace(/^\.\/+/, '')
+    .replace(/\/+$/, '');
+  if (!dir || dir === '.') return null;
+  if (dir.split('/').some(s => s === '..' || SKIPPED_SEGMENT.test(s)))
+    return null;
+  return filePaths.includes(`${dir}/package.json`) ? dir : null;
+}
+
+/**
+ * Every dir analyzeRepo reads an app from: the root, `apps/<app>`, the
+ * standalone app dirs and the typed App Path.
+ */
+export function appDirs(filePaths: string[], appPath?: string): Set<string> {
   const dirs = new Set(['.']);
   for (const path of filePaths) {
     const match = APP_DIR_PATTERN.exec(path);
     if (match?.[1]) dirs.add(`apps/${match[1]}`);
   }
   for (const dir of standaloneAppDirs(filePaths)) dirs.add(dir);
+  const typed = typedAppDir(filePaths, appPath);
+  if (typed) dirs.add(typed);
   return dirs;
 }
 

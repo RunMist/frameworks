@@ -8,7 +8,8 @@ import {
   appDirs,
   detectMonorepo,
   dirOf,
-  standaloneAppDirs
+  standaloneAppDirs,
+  typedAppDir
 } from './detect-monorepo';
 import { detectOrm } from './detect-orm';
 import {
@@ -66,7 +67,8 @@ export function analyzeRepo(
   packageJsonContents: Map<string, string>,
   pinFileContents: Map<string, string> = new Map(),
   pnpmLockfile?: string,
-  configFileContents: Map<string, string> = new Map()
+  configFileContents: Map<string, string> = new Map(),
+  appPath?: string
 ): RepoDetectionResult {
   const readFile = (path: string) =>
     pinFileContents.get(path) ?? packageJsonContents.get(path);
@@ -117,9 +119,13 @@ export function analyzeRepo(
       ? null
       : detectPnpmLockfileMismatch(rootParsed?.packageManager, pnpmLockfile);
 
-  // Apps nested with their own lockfile (tutorial and example repos).
-  // Only ones with a framework: a lockfile-carrying tool dir isn't an app.
-  const nestedApps = standaloneAppDirs(filePaths).flatMap(dir => {
+  // Apps nested with their own lockfile (tutorial and example repos), and
+  // the typed App Path. Only ones with a framework: a lockfile-carrying
+  // tool dir isn't an app.
+  const nestedDirs = standaloneAppDirs(filePaths);
+  const typed = typedAppDir(filePaths, appPath);
+  if (typed && !nestedDirs.includes(typed)) nestedDirs.push(typed);
+  const nestedApps = nestedDirs.flatMap(dir => {
     const parsed = parse(`${dir}/package.json`);
     if (!parsed) return [];
     const app = appAt(dir, dir.split('/').pop() ?? dir, parsed);
@@ -177,8 +183,10 @@ export function analyzeRepo(
  * pin files in each app dir and its parents (pins are searched nearest
  * first, see `pinSearchDirs`), and the apps' framework configs.
  */
-export function detectionFilePaths(filePaths: string[]) {
-  const searchDirs = new Set([...appDirs(filePaths)].flatMap(pinSearchDirs));
+export function detectionFilePaths(filePaths: string[], appPath?: string) {
+  const searchDirs = new Set(
+    [...appDirs(filePaths, appPath)].flatMap(pinSearchDirs)
+  );
   const inSearchDirs = (path: string) => searchDirs.has(dirOf(path));
   return {
     packageJsons: filePaths.filter(
