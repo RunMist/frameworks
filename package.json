@@ -1,6 +1,6 @@
 {
   "name": "@runmist/frameworks",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"
