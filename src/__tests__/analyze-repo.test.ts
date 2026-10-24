@@ -359,3 +359,34 @@ describe('analyzeRepo pnpm pin vs lockfile', () => {
     expect(analyzeRepo(filePaths, pkgs).pnpmLockfileMismatch).toBeNull();
   });
 });
+
+// Regression 2026-10-24: analyzeRepo reported the preset runtime only.
+describe('analyzeRepo runtime from the lockfile', () => {
+  const tanstack = JSON.stringify({
+    name: 'app',
+    dependencies: { '@tanstack/react-start': '1.0.0' }
+  });
+
+  test('TanStack Start with package-lock.json is a node app', () => {
+    const result = analyzeRepo(
+      ['package.json', 'package-lock.json'],
+      new Map([['package.json', tanstack]])
+    );
+    expect(result.apps[0]?.runtime).toBe('node');
+    expect(result.rootRuntime).toBe('node');
+  });
+
+  // The repo the project in the bug switched to (weatherdestination.com).
+  test('TanStack Start with bun.lock and engines.bun is a bun app', () => {
+    const pkg = JSON.stringify({
+      ...JSON.parse(tanstack),
+      engines: { bun: '>=1.3.0' }
+    });
+    const result = analyzeRepo(
+      ['package.json', 'bun.lock'],
+      new Map([['package.json', pkg]])
+    );
+    expect(result.apps[0]?.runtime).toBe('bun');
+    expect(result.rootRuntime).toBe('bun');
+  });
+});

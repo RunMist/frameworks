@@ -116,3 +116,78 @@ describe('detectPnpmLockfileMismatch', () => {
     ).toBe(9);
   });
 });
+
+// Regression 2026-10-24: runtime was the framework preset alone, so a
+// TanStack Start app installing with npm was deployed on Bun.
+describe('detectRuntime from the lockfile', () => {
+  test('bun preset with only package-lock.json runs on node', () => {
+    expect(detectRuntime('tanstack-start', ['package-lock.json'])).toBe('node');
+  });
+
+  test('bun preset with yarn.lock or pnpm-lock.yaml runs on node', () => {
+    expect(detectRuntime('vite', ['yarn.lock'])).toBe('node');
+    expect(detectRuntime('hono', ['pnpm-lock.yaml'])).toBe('node');
+  });
+
+  test('bun preset with bun.lock stays on bun', () => {
+    expect(detectRuntime('tanstack-start', ['bun.lock'])).toBe('bun');
+    expect(detectRuntime('tanstack-start', ['bun.lockb'])).toBe('bun');
+  });
+
+  // weatherdestination.com: bun.lock and engines.bun.
+  test('engines.bun keeps bun even next to a node lockfile', () => {
+    expect(
+      detectRuntime('tanstack-start', ['package-lock.json'], '.', {
+        engines: { bun: '>=1.3.0' }
+      })
+    ).toBe('bun');
+  });
+
+  test('no lockfile keeps the preset runtime', () => {
+    expect(detectRuntime('tanstack-start', ['package.json'])).toBe('bun');
+  });
+
+  test('a bun lockfile never moves a node preset to bun', () => {
+    expect(detectRuntime('nextjs', ['bun.lock'])).toBe('node');
+    expect(
+      detectRuntime('nextjs', ['bun.lock'], '.', { engines: { bun: '1' } })
+    ).toBe('node');
+  });
+
+  test('elysia stays on bun whatever the lockfile', () => {
+    expect(detectRuntime('elysia', ['package-lock.json'])).toBe('bun');
+  });
+
+  test("the app dir's lockfile wins over the root's", () => {
+    expect(
+      detectRuntime(
+        'tanstack-start',
+        ['bun.lock', 'apps/web/package-lock.json'],
+        'apps/web'
+      )
+    ).toBe('node');
+    expect(
+      detectRuntime(
+        'tanstack-start',
+        ['package-lock.json', 'apps/web/bun.lock'],
+        'apps/web'
+      )
+    ).toBe('bun');
+  });
+
+  test('a nested app with no lockfile uses the root one', () => {
+    expect(
+      detectRuntime('tanstack-start', ['package-lock.json'], 'apps/web')
+    ).toBe('node');
+  });
+
+  test('another dir with a similar name is not the app dir', () => {
+    expect(
+      detectRuntime(
+        'tanstack-start',
+        ['apps/web-old/package-lock.json'],
+        'apps/web'
+      )
+    ).toBe('bun');
+  });
+});

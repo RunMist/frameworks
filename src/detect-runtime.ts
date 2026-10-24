@@ -1,24 +1,55 @@
 import { getPreset } from './presets';
 
-/**
- * Detect the runtime for a given framework.
- * Uses the framework preset's default runtime.
- */
-export function detectRuntime(
-  detectedFramework: string | null,
-  _filePaths: string[]
-): 'bun' | 'node' | null {
-  if (!detectedFramework) return null;
-  const preset = getPreset(detectedFramework);
-  return preset?.runtime ?? null;
-}
-
 const LOCKFILE_MAP: Record<string, 'bun' | 'npm' | 'yarn' | 'pnpm'> = {
   'bun.lockb': 'bun',
   'bun.lock': 'bun',
   'package-lock.json': 'npm',
   'yarn.lock': 'yarn',
   'pnpm-lock.yaml': 'pnpm'
+};
+
+const BUN_ONLY_FRAMEWORKS = new Set(['elysia']);
+
+/**
+ * Detect the runtime for an app: the framework preset's runtime, except a
+ * Bun preset whose app installs with npm, yarn or pnpm and doesn't declare
+ * `engines.bun` runs on Node. Regression 2026-10-24: runtime was the preset
+ * alone, so a TanStack Start app with only a package-lock.json was deployed
+ * on Bun. A bun lockfile never moves a Node preset to Bun: Next.js and
+ * friends commonly install with Bun and still run on Node.
+ *
+ * @param appPath - The app's dir; its lockfile wins over the repo root's.
+ * @param packageJson - The app's parsed package.json, for `engines.bun`.
+ */
+export function detectRuntime(
+  detectedFramework: string | null,
+  filePaths: string[],
+  appPath = '.',
+  packageJson?: Record<string, unknown> | null
+): 'bun' | 'node' | null {
+  if (!detectedFramework) return null;
+  const presetRuntime = getPreset(detectedFramework)?.runtime ?? null;
+  if (presetRuntime !== 'bun') return presetRuntime;
+  // Built on Bun's own APIs: no lockfile makes it a Node app.
+  if (BUN_ONLY_FRAMEWORKS.has(detectedFramework)) return 'bun';
+  const engines = packageJson?.engines as Record<string, unknown> | undefined;
+  if (engines?.bun) return 'bun';
+  const lockfile = appLockfileManager(filePaths, appPath);
+  return lockfile && lockfile !== 'bun' ? 'node' : 'bun';
+}
+
+// The app dir's own lockfile, else the repo root's (a workspace lockfile).
+const appLockfileManager = (
+  filePaths: string[],
+  appPath: string
+): 'bun' | 'npm' | 'yarn' | 'pnpm' | null => {
+  const prefix = appPath === '.' || appPath === '' ? '' : `${appPath}/`;
+  const inDir = (dir: string) => {
+    for (const [name, pm] of Object.entries(LOCKFILE_MAP))
+      if (filePaths.includes(`${dir}${name}`)) return pm;
+    return null;
+  };
+  return (prefix ? inDir(prefix) : null) ?? inDir('');
 };
 
 /**

@@ -101,7 +101,7 @@ export function analyzeRepo(
       name,
       path,
       framework,
-      runtime: detectRuntime(framework, filePaths),
+      runtime: detectRuntime(framework, filePaths, path, parsed),
       orm: detectOrm(parsed),
       nodePin: nodePinFor(path),
       ...adapterFields(framework, parsed, nextConfigFor(path))
@@ -111,7 +111,7 @@ export function analyzeRepo(
   const rootParsed = parse('package.json');
   const rootFramework = rootParsed ? detectFramework(rootParsed) : null;
   const rootRuntime = rootParsed
-    ? detectRuntime(rootFramework, filePaths)
+    ? detectRuntime(rootFramework, filePaths, '.', rootParsed)
     : null;
 
   const pnpmLockfileMismatch =
