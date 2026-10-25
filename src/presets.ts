@@ -15,10 +15,11 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     // shipped server binary anymore for self-hosted targets, so every
     // project writes its own thin Fetch-API wrapper (this repo's own
     // server/start.ts, tanstack.com's src/server.ts) and its command/path
-    // varies per project. This placeholder documents that expectation
-    // rather than guessing a value that will be wrong as often as right.
-    startCommand:
-      'bun server/start.ts # verify: use the actual server entry for this project',
+    // varies per project. server/start.ts is the warpkit convention; check
+    // it against the project's actual entry. No "# verify" note in the
+    // value itself: the create form saves it and systemd's ExecStart= has
+    // no inline comments, so the note reached the app as argv.
+    startCommand: 'bun server/start.ts',
     outputDirectory: 'dist/client',
     staticUrlPath: '/assets/*'
   },

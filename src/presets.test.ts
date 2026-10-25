@@ -66,13 +66,17 @@ describe('framework presets', () => {
     expect(tanstack!.outputDirectory).not.toContain('.output');
   });
 
-  // No universal startCommand is possible for self-hosted targets on
-  // current TanStack Start - every project writes its own thin Fetch-API
-  // server wrapper. This asserts the preset documents that rather than
-  // silently defaulting to a value that's wrong as often as right.
-  test('given tanstack-start preset, when checking start command, then flags it as project-specific rather than asserting a runnable default', () => {
-    const tanstack = getPreset('tanstack-start');
-    expect(tanstack!.startCommand).toContain('verify');
+  // Regression 2026-10-25 (RunMist/runmist
+  // docs/runmist/bugs/preset-start-command-comment-in-execstart.md): the
+  // tanstack-start preset carried a "# verify: ..." note in startCommand.
+  // The create form saves the preset value and systemd's ExecStart= has no
+  // inline comments, so the note reached the app as argv.
+  test('given any preset, when checking start command, then it carries no "#" note', () => {
+    for (const preset of FRAMEWORK_PRESETS)
+      expect(preset.startCommand ?? '').not.toContain('#');
+    expect(getPreset('tanstack-start')!.startCommand).toBe(
+      'bun server/start.ts'
+    );
   });
 
   test('given nextjs preset, when checking cacheDirs, then includes its real incremental-build cache', () => {
