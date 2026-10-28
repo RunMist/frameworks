@@ -41,6 +41,7 @@ export {
 } from './node-pin';
 export type { NodeLineStatus, NodeReleaseLine } from './node-releases';
 export {
+  DEFAULT_NODE_MAJOR,
   endOfLifeNodeLines,
   findNodeLine,
   NODE_EOL_SOON_DAYS,

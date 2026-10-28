@@ -287,6 +287,60 @@ describe('resolveNodeRuntime', () => {
     });
   });
 
+  // Regression: 2026-10-28 is Node 26's ltsStart. The old resolver read the
+  // newest active LTS from the calendar here and silently moved every
+  // unpinned project to 26 on that date.
+  test('the default does not follow ltsStart into a new major', () => {
+    const r = resolveNodeRuntime({
+      setting: 'auto',
+      pin: null,
+      lines,
+      today: '2026-10-28'
+    });
+    expect(r).toMatchObject({ major: 24, source: 'default' });
+  });
+
+  test('the project pin applies when no setting or repo pin wins', () => {
+    const r = resolveNodeRuntime({
+      setting: 'auto',
+      pin: null,
+      lines,
+      today: '2026-10-28',
+      projectMajor: 26
+    });
+    expect(r).toMatchObject({
+      major: 26,
+      version: '26.10.0',
+      source: 'project'
+    });
+  });
+
+  test('a repo pin overrides the project pin', () => {
+    const r = resolveNodeRuntime({
+      setting: 'auto',
+      pin: {
+        source: 'engines.node',
+        path: 'package.json',
+        raw: '22.x'
+      },
+      lines,
+      today: '2026-10-28',
+      projectMajor: 24
+    });
+    expect(r).toMatchObject({ major: 22, source: 'engines.node' });
+  });
+
+  test('an explicit setting overrides the project pin', () => {
+    const r = resolveNodeRuntime({
+      setting: '20.x',
+      pin: null,
+      lines,
+      today: '2026-10-28',
+      projectMajor: 24
+    });
+    expect(r).toMatchObject({ major: 20, source: 'setting' });
+  });
+
   test('a major older than any known line is eol, a future one has no version', () => {
     expect(
       resolveNodeRuntime({ setting: '3.x', pin: null, lines, today: TODAY })

@@ -33,6 +33,15 @@ export type NodeLineStatus =
 /** A supported line within this many days of end-of-life is `eol_soon`. */
 export const NODE_EOL_SOON_DAYS = 180;
 
+/**
+ * The Node major a project gets when it has no explicit setting, no repo pin
+ * and no per-project pin. Deliberately a constant: resolving the newest
+ * active LTS from the calendar made every existing project jump majors on a
+ * date. New LTS lines reach this only after the matrix run in
+ * docs/runmist/plans/matrix-automation.md and an explicit bump.
+ */
+export const DEFAULT_NODE_MAJOR = 24;
+
 const DAY_MS = 86_400_000;
 
 /** Today as YYYY-MM-DD (UTC), the format every schedule date uses. */

@@ -8,6 +8,7 @@
  */
 
 import {
+  DEFAULT_NODE_MAJOR,
   findNodeLine,
   type NodeLineStatus,
   type NodeReleaseLine,
@@ -352,7 +353,11 @@ const unknownLineStatus = (
     ? 'eol'
     : 'current';
 
-export type NodeRuntimeSource = 'setting' | 'default' | NodePinSource;
+export type NodeRuntimeSource =
+  | 'setting'
+  | 'project'
+  | 'default'
+  | NodePinSource;
 
 export type ResolvedNodeRuntime = {
   major: number;
@@ -371,6 +376,8 @@ export const resolveNodeRuntime = (input: {
   pin: NodePin | null;
   lines: NodeReleaseLine[];
   today: string;
+  /** Major pinned on the project at its first successful deploy. */
+  projectMajor?: number | null;
 }): ResolvedNodeRuntime => {
   const { pin, lines, today } = input;
   const explicit = explicitNodeMajor(input.setting);
@@ -385,8 +392,11 @@ export const resolveNodeRuntime = (input: {
     if (pin && fromPin !== null) {
       major = fromPin;
       source = pin.source;
+    } else if (input.projectMajor != null) {
+      major = input.projectMajor;
+      source = 'project';
     } else {
-      major = recommendedNodeMajor(lines, today);
+      major = DEFAULT_NODE_MAJOR;
       source = 'default';
       pinUnresolved = pin !== null;
     }
