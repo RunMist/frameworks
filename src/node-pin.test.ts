@@ -4,12 +4,14 @@ import {
   findNodePin,
   type NodePinSource,
   nodePinFilePaths,
+  nodeRuntimeWarnings,
+  pinFollowsNewMajors,
   pinSearchDirs,
   rangeAllowsMajor,
   resolveNodePin,
   resolveNodeRuntime
 } from './node-pin';
-import { NODE_RELEASE_SNAPSHOT } from './node-releases';
+import { DEFAULT_NODE_MAJOR, NODE_RELEASE_SNAPSHOT } from './node-releases';
 
 const lines = NODE_RELEASE_SNAPSHOT;
 const TODAY = '2026-10-04';
@@ -139,13 +141,13 @@ const FIXTURES: Array<{
   {
     name: 'no pin uses the recommended line',
     files: { 'package.json': '{}' },
-    major: 24,
+    major: DEFAULT_NODE_MAJOR,
     source: 'default'
   },
   {
     name: 'unreadable pin falls back',
     files: { '.nvmrc': 'system' },
-    major: 24,
+    major: DEFAULT_NODE_MAJOR,
     source: 'default'
   }
 ];
@@ -270,7 +272,7 @@ describe('resolveNodeRuntime', () => {
     expect(
       resolveNodeRuntime({ setting: null, pin: null, lines, today: TODAY })
         .major
-    ).toBe(24);
+    ).toBe(DEFAULT_NODE_MAJOR);
   });
 
   test('unresolvable pin falls back to the recommendation and says so', () => {
@@ -281,7 +283,7 @@ describe('resolveNodeRuntime', () => {
       today: TODAY
     });
     expect(r).toMatchObject({
-      major: 24,
+      major: DEFAULT_NODE_MAJOR,
       source: 'default',
       pinUnresolved: true
     });
@@ -289,15 +291,31 @@ describe('resolveNodeRuntime', () => {
 
   // Regression: 2026-10-28 is Node 26's ltsStart. The old resolver read the
   // newest active LTS from the calendar here and silently moved every
-  // unpinned project to 26 on that date.
+  // unpinned project to 26 on that date. The default is now 26, so the
+  // check uses a made-up Node 28 that has reached LTS.
   test('the default does not follow ltsStart into a new major', () => {
+    const node26 = lines.find(l => l.major === 26);
+    if (!node26) throw new Error('snapshot has no Node 26');
+    const withNode28 = [
+      {
+        ...node26,
+        major: 28,
+        start: '2028-04-20',
+        ltsStart: '2028-10-20',
+        maintenanceStart: '2029-10-20',
+        endOfLife: '2031-04-30',
+        latestVersion: '28.0.0'
+      },
+      ...lines
+    ];
     const r = resolveNodeRuntime({
       setting: 'auto',
       pin: null,
-      lines,
-      today: '2026-10-28'
+      lines: withNode28,
+      today: '2028-11-01'
     });
-    expect(r).toMatchObject({ major: 24, source: 'default' });
+    expect(r).toMatchObject({ major: DEFAULT_NODE_MAJOR, source: 'default' });
+    expect(DEFAULT_NODE_MAJOR).toBe(26);
   });
 
   test('the project pin applies when no setting or repo pin wins', () => {
@@ -375,5 +393,89 @@ describe('nodePinFilePaths', () => {
         'notes.nvmrc.md'
       ])
     ).toEqual(['.nvmrc', 'apps/web/.node-version', 'mise.toml']);
+  });
+});
+
+describe('pinFollowsNewMajors', () => {
+  test('open ranges and LTS aliases follow new majors', () => {
+    for (const pin of [
+      '>=18',
+      '>18',
+      '>=18.0.0',
+      '>=20 <22 || >=24',
+      'lts/*',
+      'node',
+      '*'
+    ]) {
+      expect(pinFollowsNewMajors(pin)).toBe(true);
+    }
+  });
+
+  test('bounded ranges and exact versions stay on their majors', () => {
+    for (const pin of [
+      '24.x',
+      '^24.0.0',
+      '~24.1',
+      '>=18 <25',
+      '24.14.0',
+      '24',
+      'lts/jod'
+    ]) {
+      expect(pinFollowsNewMajors(pin)).toBe(false);
+    }
+  });
+});
+
+describe('nodeRuntimeWarnings', () => {
+  const engines = (raw: string) =>
+    ({ source: 'engines.node', path: 'package.json', raw }) as const;
+
+  test('an open range that decided the major says it will move, and how to stay', () => {
+    const resolved = resolveNodeRuntime({
+      setting: 'auto',
+      pin: engines('>=18'),
+      lines,
+      today: '2026-11-10'
+    });
+    expect(resolved.major).toBe(26);
+    expect(nodeRuntimeWarnings(resolved)).toEqual([
+      'engines.node ">=18" in package.json has no upper bound, so deploys move to each new Node LTS major when it ships (this deploy: Node 26). Set "26.x" to stay on Node 26.'
+    ]);
+  });
+
+  test('a bounded pin or no pin warns about nothing', () => {
+    for (const pin of [engines('24.x'), engines('^26.0.0'), null]) {
+      const resolved = resolveNodeRuntime({
+        setting: 'auto',
+        pin,
+        lines,
+        today: '2026-11-10'
+      });
+      expect(nodeRuntimeWarnings(resolved)).toEqual([]);
+    }
+  });
+
+  test('a setting the repo pin does not allow is flagged', () => {
+    const resolved = resolveNodeRuntime({
+      setting: '24.x',
+      pin: engines('>=26'),
+      lines,
+      today: '2026-11-10'
+    });
+    expect(nodeRuntimeWarnings(resolved)).toEqual([
+      'The project\'s Node setting (24.x) overrides engines.node ">=26" in package.json, which doesn\'t allow Node 24. Builds use 24; update the pin or the setting so they agree.'
+    ]);
+  });
+
+  test('a setting inside the pin, or an open range overridden by a setting, is quiet', () => {
+    for (const raw of ['>=18', '24.x', '24.14.0']) {
+      const resolved = resolveNodeRuntime({
+        setting: '24.x',
+        pin: engines(raw),
+        lines,
+        today: '2026-11-10'
+      });
+      expect(nodeRuntimeWarnings(resolved)).toEqual([]);
+    }
   });
 });

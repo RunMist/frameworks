@@ -414,6 +414,63 @@ export const resolveNodeRuntime = (input: {
   };
 };
 
+/** Pins that resolve to the newest LTS of the day, not a fixed major. */
+const FOLLOWS_NEW_LTS = new Set([
+  'lts/*',
+  'lts',
+  'node',
+  'stable',
+  'latest',
+  'current',
+  '*',
+  'x'
+]);
+
+/**
+ * Whether a pin moves to a new Node major when one reaches LTS: an alias
+ * like `lts/*`, or a range with no upper bound (`>=18`, `>18 || 16.x`).
+ */
+export const pinFollowsNewMajors = (raw: string): boolean => {
+  const pin = raw.trim().toLowerCase();
+  if (FOLLOWS_NEW_LTS.has(pin)) return true;
+  return (rangeIntervals(pin) ?? []).some(i => i.hi === INF);
+};
+
+const pinLabel = (pin: NodePin) =>
+  pin.source === 'engines.node'
+    ? `engines.node "${pin.raw}" in ${pin.path}`
+    : `"${pin.raw}" in ${pin.path}`;
+
+/**
+ * Deploy-log and dashboard warnings for a resolved Node runtime. Vercel
+ * warns on an open range; this also says what to set to stay put, and
+ * flags a project setting that contradicts the repo's own pin.
+ */
+export const nodeRuntimeWarnings = (
+  resolved: ResolvedNodeRuntime
+): string[] => {
+  const { pin, major, source } = resolved;
+  if (!pin) return [];
+  const warnings: string[] = [];
+  if (source === pin.source && pinFollowsNewMajors(pin.raw)) {
+    warnings.push(
+      `${pinLabel(pin)} has no upper bound, so deploys move to each new Node LTS major when it ships (this deploy: Node ${major}). Set "${major}.x" to stay on Node ${major}.`
+    );
+  }
+  if (source === 'setting') {
+    const allows =
+      resolveNodePin(pin.raw, [], '') === major ||
+      (rangeIntervals(pin.raw.trim().toLowerCase()) !== null &&
+        rangeAllowsMajor(pin.raw, major));
+    if (!allows && !FOLLOWS_NEW_LTS.has(pin.raw.trim().toLowerCase())) {
+      warnings.push(
+        `The project's Node setting (${major}.x) overrides ${pinLabel(pin)}, which doesn't allow Node ${major}. Builds use ${major}; update the pin or the setting so they agree.`
+      );
+    }
+  }
+  return warnings;
+};
+
 const PIN_FILE_NAMES = new Set<string>(
   NODE_PIN_FILES.filter(name => name !== 'package.json')
 );

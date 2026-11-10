@@ -39,8 +39,12 @@ export const NODE_EOL_SOON_DAYS = 180;
  * active LTS from the calendar made every existing project jump majors on a
  * date. New LTS lines reach this only after the matrix run in
  * docs/runmist/plans/matrix-automation.md and an explicit bump.
+ *
+ * 26 since 2026-11-10 (full-matrix live check on Node 26; Vercel's default
+ * for new projects is the latest LTS too). Existing projects keep the major
+ * they first deployed with (projects.node_major), so this moves new ones only.
  */
-export const DEFAULT_NODE_MAJOR = 24;
+export const DEFAULT_NODE_MAJOR = 26;
 
 const DAY_MS = 86_400_000;
 
