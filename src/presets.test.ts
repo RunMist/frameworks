@@ -133,6 +133,7 @@ describe('project kinds', () => {
     expect(suggestProjectKind('vite')).toBe('static');
     expect(suggestProjectKind('gatsby')).toBe('static');
     expect(suggestProjectKind('docusaurus')).toBe('static');
+    expect(suggestProjectKind('eleventy')).toBe('static');
     expect(suggestProjectKind('hono')).toBe('api');
     expect(suggestProjectKind('express')).toBe('api');
     expect(suggestProjectKind('nextjs')).toBe('web_app');
@@ -147,5 +148,8 @@ describe('project kinds', () => {
     expect(getPreset('vite')?.spaFallback).toBe(true);
     expect(getPreset('docusaurus')?.outputDirectory).toBe('build');
     expect(getPreset('docusaurus')?.spaFallback).toBe(false);
+    expect(getPreset('eleventy')?.outputDirectory).toBe('_site');
+    expect(getPreset('eleventy')?.spaFallback).toBe(false);
+    expect(getPreset('eleventy')?.startCommand).toBe('');
   });
 });

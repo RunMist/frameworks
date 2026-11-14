@@ -180,6 +180,30 @@ describe('gatsby', () => {
   });
 });
 
+describe('eleventy', () => {
+  // bitclaw/static-website (the Eleventy base blog) was detected as "other",
+  // a web app with a start command, instead of a static site.
+  test('given @11ty/eleventy in devDependencies, when detecting, then eleventy', () => {
+    expect(
+      detectFramework({
+        devDependencies: { '@11ty/eleventy': '^3.0.0', luxon: '^3.5.0' }
+      })
+    ).toBe('eleventy');
+  });
+
+  test('given @11ty/eleventy in dependencies, when detecting, then eleventy', () => {
+    expect(
+      detectFramework({ dependencies: { '@11ty/eleventy': '^3.0.0' } })
+    ).toBe('eleventy');
+  });
+
+  test('given only an 11ty plugin, when detecting, then not eleventy', () => {
+    expect(
+      detectFramework({ dependencies: { '@11ty/gray-matter': '^1.0.0' } })
+    ).toBeNull();
+  });
+});
+
 describe('docusaurus', () => {
   test('given @docusaurus/core in dependencies, when detecting, then docusaurus', () => {
     expect(

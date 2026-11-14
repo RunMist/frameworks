@@ -147,6 +147,23 @@ export const FRAMEWORK_PRESETS: FrameworkPreset[] = [
     cacheDirs: ['node_modules/.cache']
   },
   {
+    id: 'eleventy',
+    name: 'Eleventy',
+    description: 'Static site generator',
+    runtime: 'node',
+    kind: 'static',
+    // Emits one HTML file per page; a 404.html when the site has one.
+    spaFallback: false,
+    installCommand: 'npm ci',
+    buildCommand: 'npm run build',
+    // Static: nothing runs, Caddy serves the build output.
+    startCommand: '',
+    outputDirectory: '_site',
+    staticUrlPath: null,
+    // eleventy-fetch and eleventy-img keep their downloads here.
+    cacheDirs: ['.cache']
+  },
+  {
     id: 'vite',
     name: 'Vite',
     description: 'Frontend build tool',

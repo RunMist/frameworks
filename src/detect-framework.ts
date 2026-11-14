@@ -26,6 +26,7 @@ export const DETECTION_RULES: readonly FrameworkDetectionRule[] = [
   { id: 'astro', matchPackages: ['astro'] },
   { id: 'gatsby', matchPackages: ['gatsby'] },
   { id: 'docusaurus', matchPackages: ['@docusaurus/core'] },
+  { id: 'eleventy', matchPackages: ['@11ty/eleventy'] },
   {
     id: 'react-router',
     matchPackages: ['@react-router/dev', '@remix-run/dev']
